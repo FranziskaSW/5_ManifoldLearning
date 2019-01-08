@@ -141,7 +141,7 @@ def MDS(X, d):
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(ds[:, 0], ds[:, 1]) #, X[:, 2], c=color, cmap=plt.cm.Spectral)
+    ax.scatter(ds[:, 0], ds[:, 1], c=color) #, X[:, 2], c=color, cmap=plt.cm.Spectral)
     plt.show()
 
     pass
@@ -178,7 +178,8 @@ def LLE(X, d, k):
     # TODO: YOUR CODE HERE
     X, color = datasets.samples_generator.make_swiss_roll(n_samples=1000)  # TODO: delete
     Distance = squared_euclid(X, X)
-    k = 10
+
+    k = 30
     d = 2
     KNN = knn(Distance, k)
 
@@ -203,36 +204,12 @@ def LLE(X, d, k):
     smallest_v = v.argsort()[1:(d+1)]
     U = U[:,smallest_v]
 
+    ds = U
 
-
-    X[i]
-
-    W = np.zeros((n, n))
-    for i in range(0, KNN.shape[0]):
-        for j in range(0, n):
-            idx_i = index[KNN[i] == 1]
-            Z_i = X[idx_i] - X[i] # are closest to X[i]
-
-            idx_j = index[KNN[j] == 1]
-            Z_j = X[idx_j] - X[j] # are closest to X[j]
-
-            G_ij = Z_i.dot(Z_j.T)
-            W[i,j] = w.dot(G_ij.dot(w.T))
-
-
-reg = 1
-trace = np.trace(G_ij)
-if trace > 0:
-    R = reg * trace
-else:
-    R = reg
-
-G_ij.flat[::10 + 1] += R
-
-np.linalg.solve(G_ij, np.ones(10).T)
-
-w = np.ones(10)/10
-
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.scatter(ds[:, 0], ds[:, 1], c=color) #, X[:, 2], c=color, cmap=plt.cm.Spectral)
+    plt.show()
 
     pass
 
