@@ -43,7 +43,7 @@ def faces_example(path):
     '''
     Example code to show you how to load the faces data.
     '''
-
+    path = 'faces.pickle'
     with open(path, 'rb') as f:
         X = pickle.load(f)
 
@@ -98,6 +98,23 @@ def plot_with_images(X, images, title, image_num=25):
 
     return fig
 
+def squared_euclid(X, Y):
+    """
+    return the pair-wise squared euclidean distance between two data matrices.
+    :param X: NxD matrix.
+    :param Y: MxD matrix.
+    :return: NxM euclidean distance matrix.
+    """
+
+    dist = np.zeros((X.shape[0], Y.shape[0]))
+    for i in range(0, X.shape[0]):
+        for j in range(0, Y.shape[0]):
+            dist[i,j] = (np.sqrt(np.dot(X[i], X[i].T) - 2 * np.dot(X[i], Y[j].T) + np.dot(Y[j], Y[j].T)))**2
+    return dist
+
+data, color = datasets.samples_generator.make_swiss_roll(n_samples=1000)  #TODO: delete
+X = squared_euclid(data, data)
+d = 3
 
 def MDS(X, d):
     '''
@@ -108,8 +125,21 @@ def MDS(X, d):
     :param d: the dimension.
     :return: Nxd reduced data point matrix.
     '''
+    n = X.shape[0]
+    H = np.diag(np.ones(n)) - 1/n * np.dot(np.matrix(np.ones(n)).T, np.matrix(np.ones(n)))
+    S = -1/2 * np.dot(np.dot(H, X), H)
+    v, U = np.linalg.eigh(S)
+    # Z = np.dot(np.dot(U, np.diag(v)), np.linalg.inv(U))
+    biggest_v = (-v).argsort()[:d]
+    #biggest_v = [998, 997]
+    downscale = U[:,biggest_v]
 
-    # TODO: YOUR CODE HERE
+    X = downscale
+    # plot the data:
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(X[:, 0], X[:, 1], X[:, 2], c=color, cmap=plt.cm.Spectral)
+    plt.show()
 
     pass
 
