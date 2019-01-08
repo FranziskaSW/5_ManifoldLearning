@@ -114,7 +114,7 @@ def squared_euclid(X, Y):
 
 data, color = datasets.samples_generator.make_swiss_roll(n_samples=1000)  #TODO: delete
 X = squared_euclid(data, data)
-d = 3
+d = 2
 
 def MDS(X, d):
     '''
@@ -125,20 +125,27 @@ def MDS(X, d):
     :param d: the dimension.
     :return: Nxd reduced data point matrix.
     '''
+
+    data, color = datasets.samples_generator.make_swiss_roll(n_samples=1000)  # TODO: delete
+    X = squared_euclid(data, data)
+    d = 2
+
     n = X.shape[0]
     H = np.diag(np.ones(n)) - 1/n * np.dot(np.matrix(np.ones(n)).T, np.matrix(np.ones(n)))
     S = -1/2 * np.dot(np.dot(H, X), H)
-    v, U = np.linalg.eigh(S)
-    # Z = np.dot(np.dot(U, np.diag(v)), np.linalg.inv(U))
-    biggest_v = (-v).argsort()[:d]
-    #biggest_v = [998, 997]
-    downscale = U[:,biggest_v]
+    v, U = np.linalg.eigh(S)            # TODO: does not work
+    biggest_v = (-v).argsort()[:(d+1)]  # TODO: do I take biggest as well?
+    biggest_v = biggest_v[1:]
+    #biggest_v = [999, 998]
+    ds_v = v[biggest_v]
+    ds_U = U[:,biggest_v]
+    ds = np.multiply(np.matrix(np.sqrt(ds_v)), ds_U)
 
-    X = downscale
+    X = ds
     # plot the data:
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(X[:, 0], X[:, 1], X[:, 2], c=color, cmap=plt.cm.Spectral)
+    ax.scatter(X[:, 0], X[:, 1]) # , X[:, 2] , c=color, cmap=plt.cm.Spectral)
     plt.show()
 
     pass
