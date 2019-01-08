@@ -131,25 +131,38 @@ def MDS(X, d):
     d = 2
 
     n = X.shape[0]
-    H = np.diag(np.ones(n)) - 1/n * np.dot(np.matrix(np.ones(n)).T, np.matrix(np.ones(n)))
+    H = np.eye(n) - 1/n * np.ones((n, n))
     S = -1/2 * np.dot(np.dot(H, X), H)
-    v, U = np.linalg.eigh(S)            # TODO: does not work
-    biggest_v = (-v).argsort()[:(d+1)]  # TODO: do I take biggest as well?
-    biggest_v = biggest_v[1:]
-    #biggest_v = [999, 998]
+    v, U = np.linalg.eigh(S)            # TODO: does not work... or maybe it does but just not on this dataset
+    biggest_v = (-v).argsort()[:d]
     ds_v = v[biggest_v]
     ds_U = U[:,biggest_v]
     ds = np.multiply(np.matrix(np.sqrt(ds_v)), ds_U)
 
-    X = ds
-    # plot the data:
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(X[:, 0], X[:, 1]) # , X[:, 2] , c=color, cmap=plt.cm.Spectral)
+    ax.scatter(ds[:, 0], ds[:, 1]) #, X[:, 2], c=color, cmap=plt.cm.Spectral)
     plt.show()
 
     pass
 
+def knn(X, k):
+    """
+    calculate the nearest neighbors similarity of the given distance matrix.
+    :param X: A NxN distance matrix.
+    :param m: The number of nearest neighbors.
+    :return: NxN similarity matrix.
+    """
+
+    dist_idx = np.argsort(X, axis=1)
+    nearest_idx = dist_idx[:, :(k+1)]
+
+    NN = np.zeros(X.shape)
+    for i in range(0, X.shape[0]):
+        NN[i, nearest_idx[i]] += 1
+    NN = NN  - np.eye(X.shape[0])
+
+    return NN
 
 def LLE(X, d, k):
     '''
@@ -163,6 +176,63 @@ def LLE(X, d, k):
     '''
 
     # TODO: YOUR CODE HERE
+    X, color = datasets.samples_generator.make_swiss_roll(n_samples=1000)  # TODO: delete
+    Distance = squared_euclid(X, X)
+    k = 10
+    d = 2
+    KNN = knn(Distance, k)
+
+    n = KNN.shape[0]
+    index = np.arange(0, n)
+    W = np.zeros((n, n))
+
+    for i in range(0,n):
+
+        idx_i = index[KNN[i] == 1]
+        Z_i = X[idx_i] - X[i]
+        G = Z_i.dot(Z_i.T)   # (k x k)
+        W_i = np.linalg.pinv(G).dot(np.ones(k))
+        W_i = W_i/sum(W_i)
+        W[i, idx_i] = W_i.tolist()
+
+    # find Y
+    M = np.eye(n) - W
+    MTM = (M.T).dot(M)
+
+    v, U = np.linalg.eigh(MTM)
+    smallest_v = v.argsort()[1:(d+1)]
+    U = U[:,smallest_v]
+
+
+
+    X[i]
+
+    W = np.zeros((n, n))
+    for i in range(0, KNN.shape[0]):
+        for j in range(0, n):
+            idx_i = index[KNN[i] == 1]
+            Z_i = X[idx_i] - X[i] # are closest to X[i]
+
+            idx_j = index[KNN[j] == 1]
+            Z_j = X[idx_j] - X[j] # are closest to X[j]
+
+            G_ij = Z_i.dot(Z_j.T)
+            W[i,j] = w.dot(G_ij.dot(w.T))
+
+
+reg = 1
+trace = np.trace(G_ij)
+if trace > 0:
+    R = reg * trace
+else:
+    R = reg
+
+G_ij.flat[::10 + 1] += R
+
+np.linalg.solve(G_ij, np.ones(10).T)
+
+w = np.ones(10)/10
+
 
     pass
 
@@ -185,8 +255,12 @@ def DiffusionMap(X, d, sigma, t):
     pass
 
 
-if __name__ == '__main__':
+def main():
+    # here everything
 
     # TODO: YOUR CODE HERE
+
+if __name__ == '__main__':
+    main()
 
     pass
