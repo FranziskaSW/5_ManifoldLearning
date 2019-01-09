@@ -112,9 +112,6 @@ def squared_euclid(X, Y):
             dist[i,j] = (np.sqrt(np.dot(X[i], X[i].T) - 2 * np.dot(X[i], Y[j].T) + np.dot(Y[j], Y[j].T)))**2
     return dist
 
-data, color = datasets.samples_generator.make_swiss_roll(n_samples=1000)  #TODO: delete
-X = squared_euclid(data, data)
-d = 2
 
 def MDS(X, d):
     '''
@@ -205,12 +202,12 @@ def LLE(X, d, k):
     U = U[:,smallest_v]
 
     ds = U
-
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.scatter(ds[:, 0], ds[:, 1], c=color) #, X[:, 2], c=color, cmap=plt.cm.Spectral)
     plt.show()
 
+    # TODO: needs parameter tuning
     pass
 
 
@@ -227,7 +224,28 @@ def DiffusionMap(X, d, sigma, t):
     :return: Nxd reduced data matrix.
     '''
 
-    # TODO: YOUR CODE HERE
+    X, color = datasets.samples_generator.make_swiss_roll(n_samples=1000)  # TODO: delete
+    d = 2
+
+    Distance = squared_euclid(X, X)
+
+    sigma = 2
+
+    K = np.exp(-(Distance)/(2*(sigma**2)))  # similarity Matrix
+    A = np.linalg.inv(np.diag(K.sum(axis=1))).dot(K)
+    v, U = np.linalg.eigh(A)
+    biggest_v = (-v).argsort()[1:(d+1)]  # why not the biggest one? usually we only leave out the smallest because the EV is 0
+    U = U[:,biggest_v]
+
+    ds = np.multiply(U, v[biggest_v])
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.scatter(ds[:, 0], ds[:, 1], c=color) #, X[:, 2], c=color, cmap=plt.cm.Spectral)
+    plt.show()
+
+
+
 
     pass
 
