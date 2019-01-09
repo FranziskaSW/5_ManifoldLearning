@@ -38,6 +38,8 @@ def swiss_roll_example():
     ax.scatter(X[:, 0], X[:, 1], X[:, 2], c=color, cmap=plt.cm.Spectral)
     plt.show()
 
+    return X, color
+
 
 def faces_example(path):
     '''
@@ -98,6 +100,7 @@ def plot_with_images(X, images, title, image_num=25):
 
     return fig
 
+
 def squared_euclid(X, Y):
     """
     return the pair-wise squared euclidean distance between two data matrices.
@@ -113,35 +116,33 @@ def squared_euclid(X, Y):
     return dist
 
 
-def MDS(X, d):
+def MDS(D, d):
     '''
     Given a NxN pairwise distance matrix and the number of desired dimensions,
     return the dimensionally reduced data points matrix after using MDS.
 
-    :param X: NxN distance matrix.
+    :param D: NxN distance matrix.
     :param d: the dimension.
     :return: Nxd reduced data point matrix.
     '''
 
-    data, color = datasets.samples_generator.make_swiss_roll(n_samples=1000)  # TODO: delete
-    X = squared_euclid(data, data)
-    d = 2
-
-    n = X.shape[0]
+    n = D.shape[0]
     H = np.eye(n) - 1/n * np.ones((n, n))
-    S = -1/2 * np.dot(np.dot(H, X), H)
+    S = -1/2 * np.dot(np.dot(H, D), H)
     v, U = np.linalg.eigh(S)            # TODO: does not work... or maybe it does but just not on this dataset
     biggest_v = (-v).argsort()[:d]
+
     ds_v = v[biggest_v]
     ds_U = U[:,biggest_v]
     ds = np.multiply(np.matrix(np.sqrt(ds_v)), ds_U)
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(ds[:, 0], ds[:, 1], c=color) #, X[:, 2], c=color, cmap=plt.cm.Spectral)
-    plt.show()
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111, projection='3d')
+    # ax.scatter(ds[:, 0], ds[:, 1])# , c=color) #, X[:, 2], c=color, cmap=plt.cm.Spectral)
+    # plt.show()
 
-    pass
+    return np.array(ds)
+
 
 def knn(X, k):
     """
@@ -161,24 +162,20 @@ def knn(X, k):
 
     return NN
 
-def LLE(X, d, k):
+
+def LLE(X, D, d, k):
     '''
     Given a NxD data matrix, return the dimensionally reduced data matrix after
     using the LLE algorithm.
 
     :param X: NxD data matrix.
+    :param D: pairwise distance matrix (euclidean square)
     :param d: the dimension.
     :param k: the number of neighbors for the weight extraction.
     :return: Nxd reduced data matrix.
     '''
 
-    # TODO: YOUR CODE HERE
-    X, color = datasets.samples_generator.make_swiss_roll(n_samples=1000)  # TODO: delete
-    Distance = squared_euclid(X, X)
-
-    k = 30
-    d = 2
-    KNN = knn(Distance, k)
+    KNN = knn(D, k)
 
     n = KNN.shape[0]
     index = np.arange(0, n)
@@ -201,61 +198,180 @@ def LLE(X, d, k):
     smallest_v = v.argsort()[1:(d+1)]
     U = U[:,smallest_v]
 
-    ds = U
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.scatter(ds[:, 0], ds[:, 1], c=color) #, X[:, 2], c=color, cmap=plt.cm.Spectral)
-    plt.show()
+    # ds = U
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111)
+    # ax.scatter(ds[:, 0], ds[:, 1])# , c=color) #, X[:, 2], c=color, cmap=plt.cm.Spectral)
+    # plt.show()
 
-    # TODO: needs parameter tuning
-    pass
+    return np.array(U)
 
 
-def DiffusionMap(X, d, sigma, t):
+def DiffusionMap(X, D, d, sigma, t):
     '''
     Given a NxD data matrix, return the dimensionally reduced data matrix after
     using the Diffusion Map algorithm. The k parameter allows restricting the
     kernel matrix to only the k nearest neighbor of each data point.
 
     :param X: NxD data matrix.
+    :param D: NxN distance matrix, squared euclidean
     :param d: the dimension.
     :param sigma: the sigma of the gaussian for the kernel matrix transformation.
     :param t: the scale of the diffusion (amount of time steps).
     :return: Nxd reduced data matrix.
     '''
 
-    X, color = datasets.samples_generator.make_swiss_roll(n_samples=1000)  # TODO: delete
-    d = 2
-
-    Distance = squared_euclid(X, X)
-
-    sigma = 2
-
-    K = np.exp(-(Distance)/(2*(sigma**2)))  # similarity Matrix
+    K = np.exp(-(D)/(2*(sigma**2)))  # similarity Matrix
     A = np.linalg.inv(np.diag(K.sum(axis=1))).dot(K)
     v, U = np.linalg.eigh(A)
-    biggest_v = (-v).argsort()[1:(d+1)]  # why not the biggest one? usually we only leave out the smallest because the EV is 0
+    # normalize to biggest eigenvalue bzw. biggest eigenvector
+    # v = v/v[v.argmax()]
+    # U = U/U[:, v.argmax()]
+    biggest_v = (-v).argsort()[1:(d+1)]
     U = U[:,biggest_v]
 
-    ds = np.multiply(U, v[biggest_v])
+    ds = np.multiply(U, np.power(v[biggest_v], t))
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.scatter(ds[:, 0], ds[:, 1], c=color) #, X[:, 2], c=color, cmap=plt.cm.Spectral)
-    plt.show()
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111)
+    # ax.scatter(ds[:, 0], ds[:, 1]) # , c=color) #, X[:, 2], c=color, cmap=plt.cm.Spectral)
+    # plt.show()
+
+    return np.array(ds)
 
 
+def plane(points):
+
+    x = np.random.uniform(1, 10, points)
+    y = np.random.uniform(1, 10, points)
+    z = 0.5*x
+
+    X = np.matrix([x, y, z]).T
+    return X
 
 
-    pass
+def load_data(name, points=500):
 
+    if name == 'swiss_roll':
+        X, labels = datasets.samples_generator.make_swiss_roll(n_samples=points)
+    elif name == 'digits':
+        digits = datasets.load_digits()
+        X = digits.data / 255.
+        labels = digits.target
+    elif name == 'faces':
+        path = 'faces.pickle'
+        with open(path, 'rb') as f:
+            X = pickle.load(f)
+        labels = [0]*X.shape[0]
+    elif name == 'plane':
+        X = plane(points)
+        labels = [1]*points
+    return X, labels
+
+# TODO: parameter tuning
+# TODO:_lle k
+# TODO: dm sigma, t
+
+def plot_3methods(X_mds, X_lle, X_dm, labels):
+
+    results = [X_mds, X_lle, X_dm]
+
+    # plot points2cluster for different k
+    fig1, (ax0, ax1, ax2) = plt.subplots(1, 3, figsize=(18, 6),
+                             subplot_kw={'xticks': [], 'yticks': []})
+
+    fig1.subplots_adjust(hspace=0.3, wspace=0.05)
+
+    for ax, k in zip([ax0, ax1, ax2], results):
+        X_method = k
+        ax.scatter(X_method[:, 0], X_method[:, 1], c=labels, cmap=plt.cm.tab10)
+
+    ax0.set_title('mds')
+    ax1.set_title('lle')
+    ax2.set_title('dm')
+
+    return fig1
+
+
+def plot_3methods_faces(X_mds, X_lle, X_dm, labels):
+
+    results = [X_mds, X_lle, X_dm]
+
+    # plot points2cluster for different k
+    fig1, (ax0, ax1, ax2) = plt.subplots(1, 3, figsize=(18, 6),
+                             subplot_kw={'xticks': [], 'yticks': []})
+
+    fig1.subplots_adjust(hspace=0.3, wspace=0.05)
+
+    for ax, k in zip([ax0, ax1, ax2], results):
+        X_method = k
+        ax = plot_with_images(X_method, X)
+
+    ax0.set_title('mds')
+    ax1.set_title('lle')
+    ax2.set_title('dm')
+
+    return fig1
 
 def main():
-    # here everything
 
-    # TODO: YOUR CODE HERE
+    X, labels = load_data('faces')
+
+    D = squared_euclid(X, X)
+
+    X_lle = LLE(X, D, 2, 10)
+    X_dm = DiffusionMap(X, D, 2, 12, 1)
+    X_mds = MDS(D, 2)
+
+    fig = plot_3methods_faces(X_mds, X_lle, X_dm, labels)
+
 
 if __name__ == '__main__':
     main()
 
     pass
+#
+# #X, color = datasets.samples_generator.make_swiss_roll(n_samples=1000)  # TODO: delete
+# X = plane(500)
+# d = 2
+#
+#
+# Distance = squared_euclid(X, X)
+#
+# sigma = 12
+# t = 1
+#
+# K = np.exp(-(Distance)/(2*(sigma**2)))  # similarity Matrix
+# A = np.linalg.inv(np.diag(K.sum(axis=1))).dot(K)
+#
+# v, U = np.linalg.eigh(A)
+# v = v/v[v.argmax()]
+# U = U/U[:, v.argmax()]
+# biggest_v = (-v).argsort()[1:(d+1)]
+# U = U[:,biggest_v]
+#
+# ds = np.multiply(U, np.power(v[biggest_v], t))
+#
+# fig = plt.figure()
+# ax = fig.add_subplot(111)
+# ax.scatter(ds[:, 0], ds[:, 1]) #, c=color) #, X[:, 2], c=color, cmap=plt.cm.Spectral)
+# plt.show()
+#
+#
+
+X, color = swiss_roll_example()
+# Values of epsilon in base 2 we want to scan.
+sig =  np.power(2, np.arange(-10.,14.,1))
+sig = np.linspace(0.1, 20)
+
+# Pre-allocate array containing sum(Aij).
+Aij = np.zeros(sig.shape)
+
+from sklearn import metrics
+
+# Loop through values of epsilon and evaluate matrix sum.
+for i in range(len(sig)):
+    A = metrics.pairwise.rbf_kernel(X, gamma=1./(2.*sig[i]**2))
+    Aij[i] = A.sum()
+
+plt.semilogy(range(len(sig)), Aij)
