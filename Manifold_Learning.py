@@ -129,7 +129,7 @@ def MDS(D, d):
     n = D.shape[0]
     H = np.eye(n) - 1/n * np.ones((n, n))
     S = -1/2 * np.dot(np.dot(H, D), H)
-    v, U = np.linalg.eigh(S)            # TODO: does not work... or maybe it does but just not on this dataset
+    v, U = np.linalg.eigh(S)  # eigenvalues sorted from smallest to biggest
     biggest_v = (-v).argsort()[:d]
 
     ds_v = v[biggest_v]
@@ -232,21 +232,27 @@ def DiffusionMap(X, D, d, sigma, t):
 
     ds = np.multiply(U, np.power(v[biggest_v], t))
 
-    # fig = plt.figure()
-    # ax = fig.add_subplot(111)
-    # ax.scatter(ds[:, 0], ds[:, 1]) # , c=color) #, X[:, 2], c=color, cmap=plt.cm.Spectral)
-    # plt.show()
-
     return np.array(ds)
+
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(ds[:, 0], ds[:, 1], ds[:, 2]) # , c=color) #, X[:, 2], c=color, cmap=plt.cm.Spectral)
+    plt.show()
 
 
 def plane(points):
 
     x = np.random.uniform(1, 10, points)
     y = np.random.uniform(1, 10, points)
-    z = 0.5*x
+    z = np.zeros(points)
+    D = np.matrix([x, y, z]).T
 
-    X = np.matrix([x, y, z]).T
+    G = np.random.normal(0, 1, 9).reshape(3,3)
+    Q, R = np.linalg.qr(G)
+
+    X = np.array(Q.dot(D.T).T)
+
     return X
 
 
@@ -265,12 +271,14 @@ def load_data(name, points=500):
         labels = [0]*X.shape[0]
     elif name == 'plane':
         X = plane(points)
-        labels = [1]*points
+        labels = squared_euclid(np.array([[-1000, -1000, -1000]]), X).flatten()
+
     return X, labels
 
 # TODO: parameter tuning
 # TODO:_lle k
 # TODO: dm sigma, t
+
 
 def plot_3methods(X_mds, X_lle, X_dm, labels):
 
@@ -284,16 +292,40 @@ def plot_3methods(X_mds, X_lle, X_dm, labels):
 
     for ax, k in zip([ax0, ax1, ax2], results):
         X_method = k
-        ax.scatter(X_method[:, 0], X_method[:, 1], c=labels, cmap=plt.cm.tab10)
+        ax.scatter(X_method[:, 0], X_method[:, 1], c=labels, cmap=plt.cm.Spectral)
 
-    ax0.set_title('mds')
-    ax1.set_title('lle')
-    ax2.set_title('dm')
+    ax0.set_title('MDS')
+    ax1.set_title('LLE')
+    ax2.set_title('Diffusion Map')
 
     return fig1
 
 
-def plot_3methods_faces(X_mds, X_lle, X_dm, labels):
+def plot_with_images_s(X, images, ax, image_num=30):
+
+    n, pixels = np.shape(images)
+    img_size = int(pixels**0.5)
+
+    # get the size of the embedded images for plotting:
+    x_size = (max(X[:, 0]) - min(X[:, 0])) * 0.08
+    y_size = (max(X[:, 1]) - min(X[:, 1])) * 0.08
+
+    # draw random images and plot them in their relevant place:
+    for i in range(image_num):
+        img_num = np.random.choice(n)
+        x0, y0 = X[img_num, 0] - x_size / 2., X[img_num, 1] - y_size / 2.
+        x1, y1 = X[img_num, 0] + x_size / 2., X[img_num, 1] + y_size / 2.
+        img = images[img_num, :].reshape(img_size, img_size)
+        ax.imshow(img, aspect='auto', cmap=plt.cm.gray, zorder=100000,
+                  extent=(x0, x1, y0, y1))
+
+    # draw the scatter plot of the embedded data points:
+    ax.scatter(X[:, 0], X[:, 1], marker='.', alpha=0.7)
+
+    return ax
+
+
+def plot_3methods_faces(data, X_mds, X_lle, X_dm, labels):
 
     results = [X_mds, X_lle, X_dm]
 
@@ -305,25 +337,101 @@ def plot_3methods_faces(X_mds, X_lle, X_dm, labels):
 
     for ax, k in zip([ax0, ax1, ax2], results):
         X_method = k
-        ax = plot_with_images(X_method, X)
+        ax = plot_with_images_s(X_method, data, ax)
 
-    ax0.set_title('mds')
-    ax1.set_title('lle')
-    ax2.set_title('dm')
+    ax0.set_title('MDS')
+    ax1.set_title('LLE')
+    ax2.set_title('Diffusion Map')
 
     return fig1
 
+def noisy_mds(X, var):
+
+    results = dict()
+
+    for i in range(0, len(var)):
+        variance = var[i]
+
+        noise = np.random.normal(0, variance, X.shape[0]*X.shape[1]).reshape((X.shape))
+        X_noisy = X + noise
+
+        D = squared_euclid(X_noisy, X_noisy)
+        n = D.shape[0]
+        H = np.eye(n) - 1/n * np.ones((n, n))
+        S = -1/2 * np.dot(np.dot(H, D), H)
+        v, U = np.linalg.eigh(S)  # eigenvalues sorted from smallest to biggest
+        v[::-1].sort()
+
+        v_10 = v[:10]
+        results.update({variance: v[:10]})
+
+    fig, axes = plt.subplots(nrows=3, ncols=3, figsize=(12,12))
+
+    for ax, k in zip(axes.flat, sorted(results)):
+        print(k)
+        vals = results[k]
+        ax.bar(range(0, 10), vals, color=np.array(['b', 'b', 'r']))
+        ax.set_title('$\sigma_{noise}$ = ' + str(k))
+
+    return fig
+
+
+def tune_lle(X, D, labels, neighbors):
+
+    results = dict()
+
+    for i in range(0, len(neighbors)):
+        k = neighbors[i]
+        # X_lle = LLE(X, D, 2, k)
+        X_lle = DiffusionMap(X, D, 2, k, 2)
+        results.update({k: X_lle})
+
+    fig, axes = plt.subplots(nrows=3, ncols=3, figsize=(12,12),
+                             subplot_kw={'xticks': [], 'yticks': []})
+
+    for ax, k in zip(axes.flat, sorted(results)):
+        print(k)
+        X = results[k]
+        ax.scatter(X[:, 0], X[:, 1], c=labels, cmap=plt.cm.Spectral)
+        ax.set_title('k = ' + str(k))
+
+    return fig
+
+
+def plot_scree():
+
+    return fig
+
+
+def plot_distance_scatter():
+
+    return fig
+
+
 def main():
 
-    X, labels = load_data('faces')
+    X, labels = load_data('swiss_roll', points=1000)
 
     D = squared_euclid(X, X)
 
-    X_lle = LLE(X, D, 2, 10)
+    X_lle = LLE(X, D, 2, 20)
     X_dm = DiffusionMap(X, D, 2, 12, 1)
     X_mds = MDS(D, 2)
 
-    fig = plot_3methods_faces(X_mds, X_lle, X_dm, labels)
+    # var = [0.1, 0.5, 1, 2, 3, 4, 5, 10, 50]
+    # fig_1 = noisy_mds(X, var)
+
+    neighbors = [5, 10, 15, 20, 25, 30, 35, 50, 100]
+    neighbors = [3, 5, 6, 7, 8, 10, 11, 12, 13]
+    var = [0.1, 0.5, 1, 2, 3, 4, 5, 10, 50]
+    var = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5]# swiss_roll
+
+    # fig_2 = tune_lle(X, D, labels, neighbors)
+    fig_3 = tune_lle(X, D, labels, var)
+
+    fig = plot_3methods(X_mds, X_lle, X_dm, labels)
+    #fig = plot_3methods_faces(X, X_mds, X_lle, X_dm, labels)
+    plt.show()
 
 
 if __name__ == '__main__':
@@ -358,20 +466,20 @@ if __name__ == '__main__':
 # plt.show()
 #
 #
-
-X, color = swiss_roll_example()
-# Values of epsilon in base 2 we want to scan.
-sig =  np.power(2, np.arange(-10.,14.,1))
-sig = np.linspace(0.1, 20)
-
-# Pre-allocate array containing sum(Aij).
-Aij = np.zeros(sig.shape)
-
-from sklearn import metrics
-
-# Loop through values of epsilon and evaluate matrix sum.
-for i in range(len(sig)):
-    A = metrics.pairwise.rbf_kernel(X, gamma=1./(2.*sig[i]**2))
-    Aij[i] = A.sum()
-
-plt.semilogy(range(len(sig)), Aij)
+#
+# X, color = swiss_roll_example()
+# # Values of epsilon in base 2 we want to scan.
+# sig =  np.power(2, np.arange(-10.,14.,1))
+# sig = np.linspace(0.1, 20)
+#
+# # Pre-allocate array containing sum(Aij).
+# Aij = np.zeros(sig.shape)
+#
+# from sklearn import metrics
+#
+# # Loop through values of epsilon and evaluate matrix sum.
+# for i in range(len(sig)):
+#     A = metrics.pairwise.rbf_kernel(X, gamma=1./(2.*sig[i]**2))
+#     Aij[i] = A.sum()
+#
+# plt.semilogy(range(len(sig)), Aij)
