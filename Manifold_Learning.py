@@ -62,43 +62,79 @@ def faces_example(path):
     plt.show()
 
 
-def plot_with_images(X, images, title, image_num=25):
-    '''
-    A plot function for viewing images in their embedded locations. The
-    function receives the embedding (X) and the original images (images) and
-    plots the images along with the embeddings.
+def plane_example(points):
+    x = np.random.uniform(1, 10, points)
+    y = np.random.uniform(1, 10, points)
+    z = np.zeros(points)
+    D = np.matrix([x, y, z]).T
 
-    :param X: Nxd embedding matrix (after dimensionality reduction).
-    :param images: NxD original data matrix of images.
-    :param title: The title of the plot.
-    :param num_to_plot: Number of images to plot along with the scatter plot.
-    :return: the figure object.
-    '''
+    G = np.random.normal(0, 1, 9).reshape(3, 3)
+    Q, R = np.linalg.qr(G)
 
-    n, pixels = np.shape(images)
-    img_size = int(pixels**0.5)
+    X = np.array(Q.dot(D.T).T)
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.set_title(title)
+    return X
 
-    # get the size of the embedded images for plotting:
-    x_size = (max(X[:, 0]) - min(X[:, 0])) * 0.08
-    y_size = (max(X[:, 1]) - min(X[:, 1])) * 0.08
 
-    # draw random images and plot them in their relevant place:
-    for i in range(image_num):
-        img_num = np.random.choice(n)
-        x0, y0 = X[img_num, 0] - x_size / 2., X[img_num, 1] - y_size / 2.
-        x1, y1 = X[img_num, 0] + x_size / 2., X[img_num, 1] + y_size / 2.
-        img = images[img_num, :].reshape(img_size, img_size)
-        ax.imshow(img, aspect='auto', cmap=plt.cm.gray, zorder=100000,
-                  extent=(x0, x1, y0, y1))
+def load_data(name, points=500):
+    if name == 'swiss_roll':
+        X, labels = datasets.samples_generator.make_swiss_roll(n_samples=points)
 
-    # draw the scatter plot of the embedded data points:
-    ax.scatter(X[:, 0], X[:, 1], marker='.', alpha=0.7)
+    elif name == 'digits':
+        digits = datasets.load_digits()
+        X = digits.data / 255.
+        labels = digits.target
 
-    return fig
+    elif name == 'faces':
+        path = 'faces.pickle'
+        with open(path, 'rb') as f:
+            X = pickle.load(f)
+        labels = [0] * X.shape[0]
+
+    elif name == 'plane':
+        X = plane_example(points)
+        labels = squared_euclid(np.array([[-1000, -1000, -1000]]), X).flatten()
+
+    return X, labels
+
+
+# def plot_with_images(X, images, title, image_num=25):
+#     '''
+#     A plot function for viewing images in their embedded locations. The
+#     function receives the embedding (X) and the original images (images) and
+#     plots the images along with the embeddings.
+#
+#     :param X: Nxd embedding matrix (after dimensionality reduction).
+#     :param images: NxD original data matrix of images.
+#     :param title: The title of the plot.
+#     :param num_to_plot: Number of images to plot along with the scatter plot.
+#     :return: the figure object.
+#     '''
+#
+#     n, pixels = np.shape(images)
+#     img_size = int(pixels**0.5)
+#
+#     fig = plt.figure()
+#     ax = fig.add_subplot(111)
+#     ax.set_title(title)
+#
+#     # get the size of the embedded images for plotting:
+#     x_size = (max(X[:, 0]) - min(X[:, 0])) * 0.08
+#     y_size = (max(X[:, 1]) - min(X[:, 1])) * 0.08
+#
+#     # draw random images and plot them in their relevant place:
+#     for i in range(image_num):
+#         img_num = np.random.choice(n)
+#         x0, y0 = X[img_num, 0] - x_size / 2., X[img_num, 1] - y_size / 2.
+#         x1, y1 = X[img_num, 0] + x_size / 2., X[img_num, 1] + y_size / 2.
+#         img = images[img_num, :].reshape(img_size, img_size)
+#         ax.imshow(img, aspect='auto', cmap=plt.cm.gray, zorder=100000,
+#                   extent=(x0, x1, y0, y1))
+#
+#     # draw the scatter plot of the embedded data points:
+#     ax.scatter(X[:, 0], X[:, 1], marker='.', alpha=0.7)
+#
+#     return fig
 
 
 def squared_euclid(X, Y):
@@ -234,51 +270,123 @@ def DiffusionMap(X, D, d, sigma, t):
 
     return np.array(ds)
 
-
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(ds[:, 0], ds[:, 1], ds[:, 2]) # , c=color) #, X[:, 2], c=color, cmap=plt.cm.Spectral)
-    plt.show()
-
-
-def plane(points):
-
-    x = np.random.uniform(1, 10, points)
-    y = np.random.uniform(1, 10, points)
-    z = np.zeros(points)
-    D = np.matrix([x, y, z]).T
-
-    G = np.random.normal(0, 1, 9).reshape(3,3)
-    Q, R = np.linalg.qr(G)
-
-    X = np.array(Q.dot(D.T).T)
-
-    return X
-
-
-def load_data(name, points=500):
-
-    if name == 'swiss_roll':
-        X, labels = datasets.samples_generator.make_swiss_roll(n_samples=points)
-    elif name == 'digits':
-        digits = datasets.load_digits()
-        X = digits.data / 255.
-        labels = digits.target
-    elif name == 'faces':
-        path = 'faces.pickle'
-        with open(path, 'rb') as f:
-            X = pickle.load(f)
-        labels = [0]*X.shape[0]
-    elif name == 'plane':
-        X = plane(points)
-        labels = squared_euclid(np.array([[-1000, -1000, -1000]]), X).flatten()
-
-    return X, labels
+#######################################################################################
+#                     Parameter Tuning                                                #
+#######################################################################################
 
 # TODO: parameter tuning
 # TODO:_lle k
 # TODO: dm sigma, t
 
+def tune_lle(X, D, labels, neighbors):
+
+    results = dict()
+
+    for i in range(0, len(neighbors)):
+        k = neighbors[i]
+        X_lle = LLE(X, D, 2, k)
+        results.update({k: X_lle})
+
+    fig, axes = plt.subplots(nrows=3, ncols=3, figsize=(12,12),
+                             subplot_kw={'xticks': [], 'yticks': []})
+
+    for ax, k in zip(axes.flat, sorted(results)):
+        print(k)
+        X = results[k]
+        ax.scatter(X[:, 0], X[:, 1], c=labels, cmap=plt.cm.Spectral)
+        ax.set_title('k = ' + str(k))
+
+    return fig
+
+
+def tune_dm_withT(X, D, labels, sigma, t_max):
+
+    d = 2
+
+    for k in range(0, len(sigma)):
+        sig = sigma[k]
+
+        K = np.exp(-(D) / (2 * (sig ** 2)))  # similarity Matrix
+        A = np.linalg.inv(np.diag(K.sum(axis=1))).dot(K)
+        v, U = np.linalg.eigh(A)
+        biggest_v = (-v).argsort()[1:(d + 1)]
+        U = U[:, biggest_v]
+        v = v[biggest_v]
+
+        results = dict()
+        v_pow = v
+        for i in range(1, t_max):
+            print(i)
+
+            v_pow = np.multiply(v_pow, v)
+            ds = np.multiply(U, v_pow)
+            results.update({i: ds})
+
+
+        fig, axes = plt.subplots(nrows=3, ncols=3, figsize=(12,12),
+                                 subplot_kw={'xticks': [], 'yticks': []})
+
+        for ax, k in zip(axes.flat, sorted(results)):
+            print('plot times:' + str(k))
+            X = results[k]
+            ax.scatter(X[:, 0], X[:, 1], c=labels, cmap=plt.cm.Spectral)
+            ax.set_title('t = ' + str(k))
+
+
+    return fig
+
+
+
+def tune_dm(X, D, labels, sigma, t):
+
+    d = 2
+
+    results = dict()
+
+    for k in range(0, len(sigma)):
+        sig = sigma[k]
+        X_dm = DiffusionMap(X, D, 2, sig, 1)
+        results.update({sig: X_dm})
+
+    fig, axes = plt.subplots(nrows=3, ncols=3, figsize=(12,12),
+                             subplot_kw={'xticks': [], 'yticks': []})
+
+    for ax, k in zip(axes.flat, sorted(results)):
+        print('sigma:' + str(k))
+        X = results[k]
+        ax.scatter(X[:, 0], X[:, 1], c=labels, cmap=plt.cm.Spectral)
+        ax.set_title('sigma = ' + str(k))
+
+    return fig
+
+
+def tune_dm_t(X, D, labels, sigma, times):
+
+    d = 2
+
+    results = dict()
+
+    for t in range(0, len(times)):
+        time = times[t]
+        print(t, time)
+        X_dm = DiffusionMap(X, D, 2, sigma, time)
+        results.update({time: X_dm})
+
+    fig, axes = plt.subplots(nrows=3, ncols=3, figsize=(12,12),
+                             subplot_kw={'xticks': [], 'yticks': []})
+
+    for ax, k in zip(axes.flat, sorted(results)):
+        print('time:' + str(k))
+        X = results[k]
+        ax.scatter(X[:, 0], X[:, 1], c=labels, cmap=plt.cm.Spectral)
+        ax.set_title('t = ' + str(k))
+
+    return fig
+
+
+#######################################################################################
+#                     Plotting and Evaluation                                         #
+#######################################################################################
 
 def plot_3methods(X_mds, X_lle, X_dm, labels):
 
@@ -301,7 +409,7 @@ def plot_3methods(X_mds, X_lle, X_dm, labels):
     return fig1
 
 
-def plot_with_images_s(X, images, ax, image_num=30):
+def plot_with_images_s(X, labels, images, ax, image_num=30):
 
     n, pixels = np.shape(images)
     img_size = int(pixels**0.5)
@@ -320,7 +428,7 @@ def plot_with_images_s(X, images, ax, image_num=30):
                   extent=(x0, x1, y0, y1))
 
     # draw the scatter plot of the embedded data points:
-    ax.scatter(X[:, 0], X[:, 1], marker='.', alpha=0.7)
+    ax.scatter(X[:, 0], X[:, 1], marker='.', alpha=0.7, c=labels, cmap=plt.cm.Spectral)
 
     return ax
 
@@ -337,13 +445,14 @@ def plot_3methods_faces(data, X_mds, X_lle, X_dm, labels):
 
     for ax, k in zip([ax0, ax1, ax2], results):
         X_method = k
-        ax = plot_with_images_s(X_method, data, ax)
+        ax = plot_with_images_s(X_method, labels, data, ax)
 
     ax0.set_title('MDS')
     ax1.set_title('LLE')
     ax2.set_title('Diffusion Map')
 
     return fig1
+
 
 def noisy_mds(X, var):
 
@@ -375,62 +484,91 @@ def noisy_mds(X, var):
 
     return fig
 
-
-def tune_lle(X, D, labels, neighbors):
-
-    results = dict()
-
-    for i in range(0, len(neighbors)):
-        k = neighbors[i]
-        # X_lle = LLE(X, D, 2, k)
-        X_lle = DiffusionMap(X, D, 2, k, 2)
-        results.update({k: X_lle})
-
-    fig, axes = plt.subplots(nrows=3, ncols=3, figsize=(12,12),
-                             subplot_kw={'xticks': [], 'yticks': []})
-
-    for ax, k in zip(axes.flat, sorted(results)):
-        print(k)
-        X = results[k]
-        ax.scatter(X[:, 0], X[:, 1], c=labels, cmap=plt.cm.Spectral)
-        ax.set_title('k = ' + str(k))
-
-    return fig
-
-
-def plot_scree():
-
-    return fig
-
-
-def plot_distance_scatter():
-
-    return fig
-
+# TODO: distance scatter plot
 
 def main():
 
-    X, labels = load_data('swiss_roll', points=1000)
+    dataset = 'digits'
+    X, labels = load_data(dataset , points=2000)
 
     D = squared_euclid(X, X)
 
-    X_lle = LLE(X, D, 2, 20)
-    X_dm = DiffusionMap(X, D, 2, 12, 1)
+    X_lle = LLE(X, D, 2, 16) # k=15 for swiss_roll 2000 # 16 faces
+    X_dm = DiffusionMap(X, D, 2, 6, 1) # 1.75 swiss_roll # 6 faces
     X_mds = MDS(D, 2)
 
-    # var = [0.1, 0.5, 1, 2, 3, 4, 5, 10, 50]
-    # fig_1 = noisy_mds(X, var)
 
-    neighbors = [5, 10, 15, 20, 25, 30, 35, 50, 100]
-    neighbors = [3, 5, 6, 7, 8, 10, 11, 12, 13]
-    var = [0.1, 0.5, 1, 2, 3, 4, 5, 10, 50]
-    var = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5]# swiss_roll
+    # neighbors = [3, 5, 6, 7, 8, 10, 11, 12, 13]
 
+    # # swiss_roll
+    # neighbors = [5, 10, 15, 20, 25, 30, 35, 50, 100]
+    # sigma = [1.15, 1.3,
+    #          1.45, 1.6, 1.75,
+    #          1.9, 2.05, 2.2, 5]
+    # times = [1, 2, 3, 4, 10, 15, 20, 25, 100]
+    #
     # fig_2 = tune_lle(X, D, labels, neighbors)
-    fig_3 = tune_lle(X, D, labels, var)
+    # fig_3 = tune_dm(X, D, labels, sigma, 1)
+    # fig_4 = tune_dm_t(X, D, labels, 1.75, times)
+    #
+    # fig_2.savefig(str(dataset) + '_LLETuning.png')
+    # fig_3.savefig(str(dataset) + '_DMTuning.png')
+    # fig_4.savefig(str(dataset) + '_DMTuning_t.png')
+    #
+    # # plane
+    # neighbors = [5, 10, 15, 20, 25, 30, 35, 50, 100]
+    # sigma = [1.15, 1.3,
+    #          1.45, 1.6, 1.75,
+    #          1.9, 2.05, 2.2, 5]
+    # times = [1, 2, 3, 4, 10, 15, 20, 25, 100]
+    #
+    # fig_2 = tune_lle(X, D, labels, neighbors)
+    # fig_3 = tune_dm(X, D, labels, sigma, 1)
+    # fig_4 = tune_dm_t(X, D, labels, 1.75, times)
+    #
+    # fig_2.savefig(str(dataset) + '_LLETuning.png')
+    # fig_3.savefig(str(dataset) + '_DMTuning.png')
+    # fig_4.savefig(str(dataset) + '_DMTuning_t.png')
+    #
+    #
+    # var = [0.1, 0.5, 1, 2, 3, 4, 5, 10, 50]
+    # fig_6 = noisy_mds(X, var)
+    #
+    # fig_6.savefig(str(dataset) + '_screeplot.png')
 
-    fig = plot_3methods(X_mds, X_lle, X_dm, labels)
-    #fig = plot_3methods_faces(X, X_mds, X_lle, X_dm, labels)
+    # digets
+    neighbors = [5, 10, 15, 20, 25, 30, 35, 50, 100]
+    sigma = [1.15, 1.3,
+             1.45, 1.6, 1.75,
+             1.9, 2.05, 2.2, 5]
+    times = [1, 2, 3, 4, 10, 15, 20, 25, 100]
+
+    fig_2 = tune_lle(X, D, labels, neighbors)
+    fig_3 = tune_dm(X, D, labels, sigma, 1)
+    fig_4 = tune_dm_t(X, D, labels, 1.75, times)
+
+    fig_2.savefig(str(dataset) + '_LLETuning.png')
+    fig_3.savefig(str(dataset) + '_DMTuning.png')
+    fig_4.savefig(str(dataset) + '_DMTuning_t.png')
+
+
+    # # faces
+    # neighbors = [4, 6, 8, 10, 12, 14, 16, 18, 20]
+    # sigma = [2, 4, 6, 8, 10, 12, 14, 16, 18]
+    # times = [1, 2, 3, 4, 10, 15, 20, 25, 100]
+    #
+    # fig_2 = tune_lle(X, D, labels, neighbors)
+    # fig_3 = tune_dm(X, D, labels, sigma, 1)
+    # #fig_4 = tune_dm_t(X, D, labels, 1.75, times)
+    #
+    # fig_2.savefig(str(dataset) + '_LLETuning.png')
+    # fig_3.savefig(str(dataset) + '_DMTuning.png')
+    # #fig_4.savefig(str(dataset) + '_DMTuning_t.png')
+    #
+
+    fig_5 = plot_3methods_faces(X, X_mds, X_lle, X_dm, labels)
+    fig_5.savefig(str(dataset) + '_comparison.png')
+
     plt.show()
 
 
