@@ -4,65 +4,71 @@ import numpy as np
 from sklearn import datasets
 from mpl_toolkits.mplot3d import Axes3D
 
+#
+# def digits_example():
+#     '''
+#     Example code to show you how to load the MNIST data and plot it.
+#     '''
+#
+#     # load the MNIST data:
+#     digits = datasets.load_digits()
+#     data = digits.data / 255.
+#     labels = digits.target
+#
+#     # plot examples:
+#     plt.gray()
+#     for i in range(10):
+#         plt.subplot(2, 5, i+1)
+#         plt.axis('off')
+#         plt.imshow(np.reshape(data[i, :], (8, 8)))
+#         plt.title("Digit " + str(labels[i]))
+#     plt.show()
+#
+# def swiss_roll_example():
+#     '''
+#     Example code to show you how to load the swiss roll data and plot it.
+#     '''
+#
+#     # load the dataset:
+#     X, color = datasets.samples_generator.make_swiss_roll(n_samples=2000)
+#
+#     # plot the data:
+#     fig = plt.figure()
+#     ax = fig.add_subplot(111, projection='3d')
+#     ax.scatter(X[:, 0], X[:, 1], X[:, 2], c=color, cmap=plt.cm.Spectral)
+#     plt.show()
+#
+#     return X, color
+#
+#
+# def faces_example(path):
+#     '''
+#     Example code to show you how to load the faces data.
+#     '''
+#     path = 'faces.pickle'
+#     with open(path, 'rb') as f:
+#         X = pickle.load(f)
+#
+#     num_images, num_pixels = np.shape(X)
+#     d = int(num_pixels**0.5)
+#     print("The number of images in the data set is " + str(num_images))
+#     print("The image size is " + str(d) + " by " + str(d))
+#
+#     # plot some examples of faces:
+#     plt.gray()
+#     for i in range(4):
+#         plt.subplot(2, 2, i+1)
+#         plt.imshow(np.reshape(X[i, :], (d, d)))
+#     plt.show()
 
-def digits_example():
+
+def plane(points):
     '''
-    Example code to show you how to load the MNIST data and plot it.
+    creates a 2d plane in a 3d space
+
+    :param points: size of dataset
+    :return: (points x 3) dimensional dataset
     '''
-
-    # load the MNIST data:
-    digits = datasets.load_digits()
-    data = digits.data / 255.
-    labels = digits.target
-
-    # plot examples:
-    plt.gray()
-    for i in range(10):
-        plt.subplot(2, 5, i+1)
-        plt.axis('off')
-        plt.imshow(np.reshape(data[i, :], (8, 8)))
-        plt.title("Digit " + str(labels[i]))
-    plt.show()
-
-def swiss_roll_example():
-    '''
-    Example code to show you how to load the swiss roll data and plot it.
-    '''
-
-    # load the dataset:
-    X, color = datasets.samples_generator.make_swiss_roll(n_samples=2000)
-
-    # plot the data:
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(X[:, 0], X[:, 1], X[:, 2], c=color, cmap=plt.cm.Spectral)
-    plt.show()
-
-    return X, color
-
-
-def faces_example(path):
-    '''
-    Example code to show you how to load the faces data.
-    '''
-    path = 'faces.pickle'
-    with open(path, 'rb') as f:
-        X = pickle.load(f)
-
-    num_images, num_pixels = np.shape(X)
-    d = int(num_pixels**0.5)
-    print("The number of images in the data set is " + str(num_images))
-    print("The image size is " + str(d) + " by " + str(d))
-
-    # plot some examples of faces:
-    plt.gray()
-    for i in range(4):
-        plt.subplot(2, 2, i+1)
-        plt.imshow(np.reshape(X[i, :], (d, d)))
-    plt.show()
-
-
-def plane_example(points):
     x = np.random.uniform(1, 10, points)
     y = np.random.uniform(1, 10, points)
     z = np.zeros(points)
@@ -77,6 +83,13 @@ def plane_example(points):
 
 
 def load_data(name, points=500):
+    '''
+    loads the dataset specified by name
+
+    :param name: name of dataset
+    :param points: size of dataset
+    :return: dataset and its labels
+    '''
     if name == 'swiss_roll':
         X, labels = datasets.samples_generator.make_swiss_roll(n_samples=points)
 
@@ -92,8 +105,10 @@ def load_data(name, points=500):
         labels = [0] * X.shape[0]
 
     elif name == 'plane':
-        X = plane_example(points)
+        X = plane(points)
         labels = squared_euclid(np.array([[-1000, -1000, -1000]]), X).flatten()
+
+    # TODO: points - size via index for digits and faces
 
     return X, labels
 
@@ -140,6 +155,7 @@ def load_data(name, points=500):
 def squared_euclid(X, Y):
     """
     return the pair-wise squared euclidean distance between two data matrices.
+
     :param X: NxD matrix.
     :param Y: MxD matrix.
     :return: NxM euclidean distance matrix.
@@ -183,6 +199,7 @@ def MDS(D, d):
 def knn(X, k):
     """
     calculate the nearest neighbors similarity of the given distance matrix.
+
     :param X: A NxN distance matrix.
     :param m: The number of nearest neighbors.
     :return: NxN similarity matrix.
@@ -279,6 +296,15 @@ def DiffusionMap(X, D, d, sigma, t):
 # TODO: dm sigma, t
 
 def tune_lle(X, D, labels, neighbors):
+    '''
+    runs LLE for different neighbors-value. Plots the result
+
+    :param X: NxD data matrix.
+    :param D: pairwise distance matrix (euclidean square)
+    :param labels: labels of data
+    :param neighbors: list of neighbor-values (max. 9)
+    :return: plot of the results
+    '''
 
     results = dict()
 
@@ -298,48 +324,55 @@ def tune_lle(X, D, labels, neighbors):
 
     return fig
 
+#
+# def tune_dm_withT(X, D, labels, sigma, t_max):
+#
+#     d = 2
+#
+#     for k in range(0, len(sigma)):
+#         sig = sigma[k]
+#
+#         K = np.exp(-(D) / (2 * (sig ** 2)))  # similarity Matrix
+#         A = np.linalg.inv(np.diag(K.sum(axis=1))).dot(K)
+#         v, U = np.linalg.eigh(A)
+#         biggest_v = (-v).argsort()[1:(d + 1)]
+#         U = U[:, biggest_v]
+#         v = v[biggest_v]
+#
+#         results = dict()
+#         v_pow = v
+#         for i in range(1, t_max):
+#             print(i)
+#
+#             v_pow = np.multiply(v_pow, v)
+#             ds = np.multiply(U, v_pow)
+#             results.update({i: ds})
+#
+#
+#         fig, axes = plt.subplots(nrows=3, ncols=3, figsize=(12,12),
+#                                  subplot_kw={'xticks': [], 'yticks': []})
+#
+#         for ax, k in zip(axes.flat, sorted(results)):
+#             print('plot times:' + str(k))
+#             X = results[k]
+#             ax.scatter(X[:, 0], X[:, 1], c=labels, cmap=plt.cm.Spectral)
+#             ax.set_title('t = ' + str(k))
+#
+#
+#     return fig
+#
 
-def tune_dm_withT(X, D, labels, sigma, t_max):
 
-    d = 2
+def tune_dm(X, D, labels, sigma):
+    '''
+    runs DiffusionMap for different sigma values of heat kernel. Plots the results
 
-    for k in range(0, len(sigma)):
-        sig = sigma[k]
-
-        K = np.exp(-(D) / (2 * (sig ** 2)))  # similarity Matrix
-        A = np.linalg.inv(np.diag(K.sum(axis=1))).dot(K)
-        v, U = np.linalg.eigh(A)
-        biggest_v = (-v).argsort()[1:(d + 1)]
-        U = U[:, biggest_v]
-        v = v[biggest_v]
-
-        results = dict()
-        v_pow = v
-        for i in range(1, t_max):
-            print(i)
-
-            v_pow = np.multiply(v_pow, v)
-            ds = np.multiply(U, v_pow)
-            results.update({i: ds})
-
-
-        fig, axes = plt.subplots(nrows=3, ncols=3, figsize=(12,12),
-                                 subplot_kw={'xticks': [], 'yticks': []})
-
-        for ax, k in zip(axes.flat, sorted(results)):
-            print('plot times:' + str(k))
-            X = results[k]
-            ax.scatter(X[:, 0], X[:, 1], c=labels, cmap=plt.cm.Spectral)
-            ax.set_title('t = ' + str(k))
-
-
-    return fig
-
-
-
-def tune_dm(X, D, labels, sigma, t):
-
-    d = 2
+    :param X: NxD data matrix.
+    :param D: pairwise distance matrix (euclidean square)
+    :param labels: labels of data
+    :param sigma: list of sigma-values (max. 9)
+    :return: plot of the results
+    '''
 
     results = dict()
 
@@ -361,8 +394,16 @@ def tune_dm(X, D, labels, sigma, t):
 
 
 def tune_dm_t(X, D, labels, sigma, times):
+    '''
+    runs DiffusionMap for different time values for diffusion. Plots the results
 
-    d = 2
+    :param X: NxD data matrix.
+    :param D: pairwise distance matrix (euclidean square)
+    :param labels: labels of data
+    :param sigma: fix sigma value
+    :param times: list of sigma-values (max. 9)
+    :return: plot of the results
+    '''
 
     results = dict()
 
@@ -488,17 +529,8 @@ def noisy_mds(X, var):
 
 def main():
 
-    dataset = 'digits'
-    X, labels = load_data(dataset , points=2000)
+    dataset = 'faces'
 
-    D = squared_euclid(X, X)
-
-    X_lle = LLE(X, D, 2, 16) # k=15 for swiss_roll 2000 # 16 faces
-    X_dm = DiffusionMap(X, D, 2, 6, 1) # 1.75 swiss_roll # 6 faces
-    X_mds = MDS(D, 2)
-
-
-    # neighbors = [3, 5, 6, 7, 8, 10, 11, 12, 13]
 
     # # swiss_roll
     # neighbors = [5, 10, 15, 20, 25, 30, 35, 50, 100]
@@ -507,14 +539,6 @@ def main():
     #          1.9, 2.05, 2.2, 5]
     # times = [1, 2, 3, 4, 10, 15, 20, 25, 100]
     #
-    # fig_2 = tune_lle(X, D, labels, neighbors)
-    # fig_3 = tune_dm(X, D, labels, sigma, 1)
-    # fig_4 = tune_dm_t(X, D, labels, 1.75, times)
-    #
-    # fig_2.savefig(str(dataset) + '_LLETuning.png')
-    # fig_3.savefig(str(dataset) + '_DMTuning.png')
-    # fig_4.savefig(str(dataset) + '_DMTuning_t.png')
-    #
     # # plane
     # neighbors = [5, 10, 15, 20, 25, 30, 35, 50, 100]
     # sigma = [1.15, 1.3,
@@ -522,49 +546,45 @@ def main():
     #          1.9, 2.05, 2.2, 5]
     # times = [1, 2, 3, 4, 10, 15, 20, 25, 100]
     #
-    # fig_2 = tune_lle(X, D, labels, neighbors)
-    # fig_3 = tune_dm(X, D, labels, sigma, 1)
-    # fig_4 = tune_dm_t(X, D, labels, 1.75, times)
-    #
-    # fig_2.savefig(str(dataset) + '_LLETuning.png')
-    # fig_3.savefig(str(dataset) + '_DMTuning.png')
-    # fig_4.savefig(str(dataset) + '_DMTuning_t.png')
-    #
-    #
     # var = [0.1, 0.5, 1, 2, 3, 4, 5, 10, 50]
     # fig_6 = noisy_mds(X, var)
     #
     # fig_6.savefig(str(dataset) + '_screeplot.png')
+    #
+    #
+    # # digets
+    # dataset = 'digits'
+    # X, labels = load_data(dataset , points=2000)
+    # D = squared_euclid(X, X)
+    #
+    # neighbors = [5, 10, 15, 20, 25, 30, 35, 50, 100]
+    # sigma = [1.15, 1.3,
+    #          1.45, 1.6, 1.75,
+    #          1.9, 2.05, 2.2, 5]
+    # times = [1, 2, 3, 4, 10, 15, 20, 25, 100]
 
-    # digets
-    neighbors = [5, 10, 15, 20, 25, 30, 35, 50, 100]
-    sigma = [1.15, 1.3,
-             1.45, 1.6, 1.75,
-             1.9, 2.05, 2.2, 5]
+    # faces
+    dataset = 'faces'
+    X, labels = load_data(dataset , points=2000)
+    D = squared_euclid(X, X)
+
+    neighbors = [2, 4, 10, 14, 15, 16, 17, 20, 30]
+    sigma = [3, 5, 7, 9, 11, 15, 20, 25, 50]
     times = [1, 2, 3, 4, 10, 15, 20, 25, 100]
 
+    # ----------------------------------------------------------------------------------
     fig_2 = tune_lle(X, D, labels, neighbors)
     fig_3 = tune_dm(X, D, labels, sigma, 1)
-    fig_4 = tune_dm_t(X, D, labels, 1.75, times)
+    #fig_4 = tune_dm_t(X, D, labels, 1.75, times)
 
     fig_2.savefig(str(dataset) + '_LLETuning.png')
     fig_3.savefig(str(dataset) + '_DMTuning.png')
-    fig_4.savefig(str(dataset) + '_DMTuning_t.png')
+    #fig_4.savefig(str(dataset) + '_DMTuning_t.png')
 
-
-    # # faces
-    # neighbors = [4, 6, 8, 10, 12, 14, 16, 18, 20]
-    # sigma = [2, 4, 6, 8, 10, 12, 14, 16, 18]
-    # times = [1, 2, 3, 4, 10, 15, 20, 25, 100]
-    #
-    # fig_2 = tune_lle(X, D, labels, neighbors)
-    # fig_3 = tune_dm(X, D, labels, sigma, 1)
-    # #fig_4 = tune_dm_t(X, D, labels, 1.75, times)
-    #
-    # fig_2.savefig(str(dataset) + '_LLETuning.png')
-    # fig_3.savefig(str(dataset) + '_DMTuning.png')
-    # #fig_4.savefig(str(dataset) + '_DMTuning_t.png')
-    #
+    # ----------------------------------------------------------------------------------
+    X_lle = LLE(X, D, 2, 15) # k=15 for swiss_roll 2000 # 15 faces
+    X_dm = DiffusionMap(X, D, 2, 7, 1) # 1.75 swiss_roll # 7 faces
+    X_mds = MDS(D, 2)
 
     fig_5 = plot_3methods_faces(X, X_mds, X_lle, X_dm, labels)
     fig_5.savefig(str(dataset) + '_comparison.png')
