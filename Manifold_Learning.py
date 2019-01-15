@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn import datasets
 from mpl_toolkits.mplot3d import Axes3D
+from keras.datasets import mnist
 
 #
 # def digits_example():
@@ -35,7 +36,7 @@ from mpl_toolkits.mplot3d import Axes3D
 #     # plot the data:
 #     fig = plt.figure()
 #     ax = fig.add_subplot(111, projection='3d')
-#     ax.scatter(X[:, 0], X[:, 1], X[:, 2], c=color, cmap=plt.cm.Spectral)
+#     ax.scatter(X[:, 0], X[:, 1], X[:, 2], c=color, cmap=plt.cm.tab10)
 #     plt.show()
 #
 #     return X, color
@@ -95,8 +96,11 @@ def load_data(name, points=500):
 
     elif name == 'digits':
         digits = datasets.load_digits()
-        X = digits.data / 255.
-        labels = digits.target
+        (X, labels), (x_test, y_test) = mnist.load_data()
+        idx = np.random.choice(a=X.shape[0], size=points)
+        X = X.reshape(60000, 784)[idx] / 255.
+        labels = labels[idx]
+
 
     elif name == 'faces':
         path = 'faces.pickle'
@@ -190,7 +194,7 @@ def MDS(D, d):
 
     # fig = plt.figure()
     # ax = fig.add_subplot(111, projection='3d')
-    # ax.scatter(ds[:, 0], ds[:, 1])# , c=color) #, X[:, 2], c=color, cmap=plt.cm.Spectral)
+    # ax.scatter(ds[:, 0], ds[:, 1])# , c=color) #, X[:, 2], c=color, cmap=plt.cm.tab10)
     # plt.show()
 
     return np.array(ds)
@@ -254,7 +258,7 @@ def LLE(X, D, d, k):
     # ds = U
     # fig = plt.figure()
     # ax = fig.add_subplot(111)
-    # ax.scatter(ds[:, 0], ds[:, 1])# , c=color) #, X[:, 2], c=color, cmap=plt.cm.Spectral)
+    # ax.scatter(ds[:, 0], ds[:, 1])# , c=color) #, X[:, 2], c=color, cmap=plt.cm.tab10)
     # plt.show()
 
     return np.array(U)
@@ -291,10 +295,6 @@ def DiffusionMap(X, D, d, sigma, t):
 #                     Parameter Tuning                                                #
 #######################################################################################
 
-# TODO: parameter tuning
-# TODO:_lle k
-# TODO: dm sigma, t
-
 def tune_lle(X, D, labels, neighbors):
     '''
     runs LLE for different neighbors-value. Plots the result
@@ -319,7 +319,7 @@ def tune_lle(X, D, labels, neighbors):
     for ax, k in zip(axes.flat, sorted(results)):
         print(k)
         X = results[k]
-        ax.scatter(X[:, 0], X[:, 1], c=labels, cmap=plt.cm.Spectral)
+        ax.scatter(X[:, 0], X[:, 1],  marker='.', alpha=0.7, c=labels, cmap=plt.cm.tab10)
         ax.set_title('k = ' + str(k))
 
     return fig
@@ -355,7 +355,7 @@ def tune_lle(X, D, labels, neighbors):
 #         for ax, k in zip(axes.flat, sorted(results)):
 #             print('plot times:' + str(k))
 #             X = results[k]
-#             ax.scatter(X[:, 0], X[:, 1], c=labels, cmap=plt.cm.Spectral)
+#             ax.scatter(X[:, 0], X[:, 1], c=labels, cmap=plt.cm.tab10)
 #             ax.set_title('t = ' + str(k))
 #
 #
@@ -387,7 +387,7 @@ def tune_dm(X, D, labels, sigma):
     for ax, k in zip(axes.flat, sorted(results)):
         print('sigma:' + str(k))
         X = results[k]
-        ax.scatter(X[:, 0], X[:, 1], c=labels, cmap=plt.cm.Spectral)
+        ax.scatter(X[:, 0], X[:, 1],  marker='.', alpha=0.7, c=labels, cmap=plt.cm.tab10)
         ax.set_title('sigma = ' + str(k))
 
     return fig
@@ -419,7 +419,7 @@ def tune_dm_t(X, D, labels, sigma, times):
     for ax, k in zip(axes.flat, sorted(results)):
         print('time:' + str(k))
         X = results[k]
-        ax.scatter(X[:, 0], X[:, 1], c=labels, cmap=plt.cm.Spectral)
+        ax.scatter(X[:, 0], X[:, 1], c=labels, cmap=plt.cm.tab10)
         ax.set_title('t = ' + str(k))
 
     return fig
@@ -441,7 +441,7 @@ def plot_3methods(X_mds, X_lle, X_dm, labels):
 
     for ax, k in zip([ax0, ax1, ax2], results):
         X_method = k
-        ax.scatter(X_method[:, 0], X_method[:, 1], c=labels, cmap=plt.cm.Spectral)
+        ax.scatter(X_method[:, 0], X_method[:, 1],  marker='.', alpha=0.7, c=labels, cmap=plt.cm.tab10)
 
     ax0.set_title('MDS')
     ax1.set_title('LLE')
@@ -469,7 +469,7 @@ def plot_with_images_s(X, labels, images, ax, image_num=30):
                   extent=(x0, x1, y0, y1))
 
     # draw the scatter plot of the embedded data points:
-    ax.scatter(X[:, 0], X[:, 1], marker='.', alpha=0.7, c=labels, cmap=plt.cm.Spectral)
+    ax.scatter(X[:, 0], X[:, 1], marker='.', alpha=0.7, c=labels, cmap=plt.cm.tab10)
 
     return ax
 
@@ -552,41 +552,44 @@ def main():
     # fig_6.savefig(str(dataset) + '_screeplot.png')
     #
     #
-    # # digets
-    # dataset = 'digits'
+    # digets
+    dataset = 'digits'
+    X, labels = load_data(dataset , points=2000)
+    print(X.shape, labels.shape)
+    D = squared_euclid(X, X)
+
+    neighbors = [3, 6, 7, 8, 9, 10, 11, 12, 13]
+    neighbors = [2, 3, 4, 5, 6, 7, 8, 9, 10]
+    sigma = [3.0, 3.2, 3.4,
+             3.6, 3.8, 4.0,
+             4.2, 4.4, 4.6]
+    times = [1, 2, 3, 4, 10, 15, 20, 25, 100]
+    #
+    # # faces
+    # dataset = 'faces'
     # X, labels = load_data(dataset , points=2000)
     # D = squared_euclid(X, X)
     #
-    # neighbors = [5, 10, 15, 20, 25, 30, 35, 50, 100]
-    # sigma = [1.15, 1.3,
-    #          1.45, 1.6, 1.75,
-    #          1.9, 2.05, 2.2, 5]
+    # neighbors = [2, 4, 10, 14, 15, 16, 17, 20, 30]
+    # sigma = [3, 5, 7, 9, 11, 15, 20, 25, 50]
     # times = [1, 2, 3, 4, 10, 15, 20, 25, 100]
-
-    # faces
-    dataset = 'faces'
-    X, labels = load_data(dataset , points=2000)
-    D = squared_euclid(X, X)
-
-    neighbors = [2, 4, 10, 14, 15, 16, 17, 20, 30]
-    sigma = [3, 5, 7, 9, 11, 15, 20, 25, 50]
-    times = [1, 2, 3, 4, 10, 15, 20, 25, 100]
-
+    #
     # ----------------------------------------------------------------------------------
-    fig_2 = tune_lle(X, D, labels, neighbors)
-    fig_3 = tune_dm(X, D, labels, sigma, 1)
+    # fig_2 = tune_lle(X, D, labels, neighbors)
+    fig_3 = tune_dm(X, D, labels, sigma)
     #fig_4 = tune_dm_t(X, D, labels, 1.75, times)
 
-    fig_2.savefig(str(dataset) + '_LLETuning.png')
+    # fig_2.savefig(str(dataset) + '_LLETuning.png')
     fig_3.savefig(str(dataset) + '_DMTuning.png')
     #fig_4.savefig(str(dataset) + '_DMTuning_t.png')
 
     # ----------------------------------------------------------------------------------
-    X_lle = LLE(X, D, 2, 15) # k=15 for swiss_roll 2000 # 15 faces
-    X_dm = DiffusionMap(X, D, 2, 7, 1) # 1.75 swiss_roll # 7 faces
+    X_lle = LLE(X, D, 2, 5) # k=15 for swiss_roll 2000 # 15 faces # 5 digits
+    X_dm = DiffusionMap(X, D, 2, 4, 1) # 1.75 swiss_roll # 7 faces # 4 digits
     X_mds = MDS(D, 2)
 
-    fig_5 = plot_3methods_faces(X, X_mds, X_lle, X_dm, labels)
+    #fig_5 = plot_3methods_faces(X, X_mds, X_lle, X_dm, labels)
+    fig_5 = plot_3methods(X_mds, X_lle, X_dm, labels)
     fig_5.savefig(str(dataset) + '_comparison.png')
 
     plt.show()
@@ -620,7 +623,7 @@ if __name__ == '__main__':
 #
 # fig = plt.figure()
 # ax = fig.add_subplot(111)
-# ax.scatter(ds[:, 0], ds[:, 1]) #, c=color) #, X[:, 2], c=color, cmap=plt.cm.Spectral)
+# ax.scatter(ds[:, 0], ds[:, 1]) #, c=color) #, X[:, 2], c=color, cmap=plt.cm.tab10)
 # plt.show()
 #
 #
