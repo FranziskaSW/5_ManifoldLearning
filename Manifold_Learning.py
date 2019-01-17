@@ -3,64 +3,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn import datasets
 from mpl_toolkits.mplot3d import Axes3D
-from keras.datasets import mnist
-
-#
-# def digits_example():
-#     '''
-#     Example code to show you how to load the MNIST data and plot it.
-#     '''
-#
-#     # load the MNIST data:
-#     digits = datasets.load_digits()
-#     data = digits.data / 255.
-#     labels = digits.target
-#
-#     # plot examples:
-#     plt.gray()
-#     for i in range(10):
-#         plt.subplot(2, 5, i+1)
-#         plt.axis('off')
-#         plt.imshow(np.reshape(data[i, :], (8, 8)))
-#         plt.title("Digit " + str(labels[i]))
-#     plt.show()
-#
-# def swiss_roll_example():
-#     '''
-#     Example code to show you how to load the swiss roll data and plot it.
-#     '''
-#
-#     # load the dataset:
-#     X, color = datasets.samples_generator.make_swiss_roll(n_samples=2000)
-#
-#     # plot the data:
-#     fig = plt.figure()
-#     ax = fig.add_subplot(111, projection='3d')
-#     ax.scatter(X[:, 0], X[:, 1], X[:, 2], c=color, cmap=plt.cm.Spectral)
-#     plt.show()
-#
-#     return X, color
-#
-#
-# def faces_example(path):
-#     '''
-#     Example code to show you how to load the faces data.
-#     '''
-#     path = 'faces.pickle'
-#     with open(path, 'rb') as f:
-#         X = pickle.load(f)
-#
-#     num_images, num_pixels = np.shape(X)
-#     d = int(num_pixels**0.5)
-#     print("The number of images in the data set is " + str(num_images))
-#     print("The image size is " + str(d) + " by " + str(d))
-#
-#     # plot some examples of faces:
-#     plt.gray()
-#     for i in range(4):
-#         plt.subplot(2, 2, i+1)
-#         plt.imshow(np.reshape(X[i, :], (d, d)))
-#     plt.show()
 
 
 def plane(points):
@@ -94,13 +36,10 @@ def load_data(name, points=500):
     if name == 'swiss_roll':
         X, labels = datasets.samples_generator.make_swiss_roll(n_samples=points)
 
-    elif name == 'digits':
-        digits = datasets.load_digits()
-        (X, labels), (x_test, y_test) = mnist.load_data()
-        idx = np.random.choice(a=X.shape[0], size=points)
-        X = X.reshape(60000, 784)[idx] / 255.
-        labels = labels[idx]
-
+    elif name == 'mnist':
+        mnist = datasets.load_digits()
+        X = mnist.data / 255.
+        labels = mnist.target
 
     elif name == 'faces':
         path = 'faces.pickle'
@@ -112,48 +51,7 @@ def load_data(name, points=500):
         X = plane(points)
         labels = squared_euclid(np.array([[-1000, -1000, -1000]]), X).flatten()
 
-    # TODO: points - size via index for digits and faces
-
     return X, labels
-
-
-# def plot_with_images(X, images, title, image_num=25):
-#     '''
-#     A plot function for viewing images in their embedded locations. The
-#     function receives the embedding (X) and the original images (images) and
-#     plots the images along with the embeddings.
-#
-#     :param X: Nxd embedding matrix (after dimensionality reduction).
-#     :param images: NxD original data matrix of images.
-#     :param title: The title of the plot.
-#     :param num_to_plot: Number of images to plot along with the scatter plot.
-#     :return: the figure object.
-#     '''
-#
-#     n, pixels = np.shape(images)
-#     img_size = int(pixels**0.5)
-#
-#     fig = plt.figure()
-#     ax = fig.add_subplot(111)
-#     ax.set_title(title)
-#
-#     # get the size of the embedded images for plotting:
-#     x_size = (max(X[:, 0]) - min(X[:, 0])) * 0.08
-#     y_size = (max(X[:, 1]) - min(X[:, 1])) * 0.08
-#
-#     # draw random images and plot them in their relevant place:
-#     for i in range(image_num):
-#         img_num = np.random.choice(n)
-#         x0, y0 = X[img_num, 0] - x_size / 2., X[img_num, 1] - y_size / 2.
-#         x1, y1 = X[img_num, 0] + x_size / 2., X[img_num, 1] + y_size / 2.
-#         img = images[img_num, :].reshape(img_size, img_size)
-#         ax.imshow(img, aspect='auto', cmap=plt.cm.gray, zorder=100000,
-#                   extent=(x0, x1, y0, y1))
-#
-#     # draw the scatter plot of the embedded data points:
-#     ax.scatter(X[:, 0], X[:, 1], marker='.', alpha=0.7)
-#
-#     return fig
 
 
 def squared_euclid(X, Y):
@@ -191,11 +89,6 @@ def MDS(D, d):
     ds_v = v[biggest_v]
     ds_U = U[:,biggest_v]
     ds = np.multiply(np.matrix(np.sqrt(ds_v)), ds_U)
-
-    # fig = plt.figure()
-    # ax = fig.add_subplot(111, projection='3d')
-    # ax.scatter(ds[:, 0], ds[:, 1])# , c=color) #, X[:, 2], c=color, cmap=plt.cm.Spectral)
-    # plt.show()
 
     return np.array(ds)
 
@@ -255,12 +148,6 @@ def LLE(X, D, d, k):
     smallest_v = v.argsort()[1:(d+1)]
     U = U[:,smallest_v]
 
-    # ds = U
-    # fig = plt.figure()
-    # ax = fig.add_subplot(111)
-    # ax.scatter(ds[:, 0], ds[:, 1])# , c=color) #, X[:, 2], c=color, cmap=plt.cm.Spectral)
-    # plt.show()
-
     return np.array(U)
 
 
@@ -281,15 +168,13 @@ def DiffusionMap(X, D, d, sigma, t):
     K = np.exp(-(D)/(2*(sigma**2)))  # similarity Matrix
     A = np.linalg.inv(np.diag(K.sum(axis=1))).dot(K)
     v, U = np.linalg.eigh(A)
-    # normalize to biggest eigenvalue bzw. biggest eigenvector
-    # v = v/v[v.argmax()]
-    # U = U/U[:, v.argmax()]
     biggest_v = (-v).argsort()[1:(d+1)]
     U = U[:,biggest_v]
 
     ds = np.multiply(U, np.power(v[biggest_v], t))
 
     return np.array(ds)
+
 
 #######################################################################################
 #                     Parameter Tuning                                                #
@@ -323,44 +208,6 @@ def tune_lle(X, D, labels, neighbors):
         ax.set_title('k = ' + str(k))
 
     return fig
-
-#
-# def tune_dm_withT(X, D, labels, sigma, t_max):
-#
-#     d = 2
-#
-#     for k in range(0, len(sigma)):
-#         sig = sigma[k]
-#
-#         K = np.exp(-(D) / (2 * (sig ** 2)))  # similarity Matrix
-#         A = np.linalg.inv(np.diag(K.sum(axis=1))).dot(K)
-#         v, U = np.linalg.eigh(A)
-#         biggest_v = (-v).argsort()[1:(d + 1)]
-#         U = U[:, biggest_v]
-#         v = v[biggest_v]
-#
-#         results = dict()
-#         v_pow = v
-#         for i in range(1, t_max):
-#             print(i)
-#
-#             v_pow = np.multiply(v_pow, v)
-#             ds = np.multiply(U, v_pow)
-#             results.update({i: ds})
-#
-#
-#         fig, axes = plt.subplots(nrows=3, ncols=3, figsize=(12,12),
-#                                  subplot_kw={'xticks': [], 'yticks': []})
-#
-#         for ax, k in zip(axes.flat, sorted(results)):
-#             print('plot times:' + str(k))
-#             X = results[k]
-#             ax.scatter(X[:, 0], X[:, 1], c=labels, cmap=plt.cm.Spectral)
-#             ax.set_title('t = ' + str(k))
-#
-#
-#     return fig
-#
 
 
 def tune_dm(X, D, labels, sigma):
@@ -419,7 +266,7 @@ def tune_dm_t(X, D, labels, sigma, times):
     for ax, k in zip(axes.flat, sorted(results)):
         print('time:' + str(k))
         X = results[k]
-        ax.scatter(X[:, 0], X[:, 1], c=labels, cmap=plt.cm.Spectral)
+        ax.scatter(X[:, 0], X[:, 1],  marker='.', alpha=0.7, c=labels, cmap=plt.cm.Spectral)
         ax.set_title('t = ' + str(k))
 
     return fig
@@ -429,12 +276,21 @@ def tune_dm_t(X, D, labels, sigma, times):
 #                     Plotting and Evaluation                                         #
 #######################################################################################
 
+def plot_dataset(X, labels):
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(X[:, 0], X[:, 1], X[:, 2], c=labels, cmap=plt.cm.Spectral)
+
+    return ax
+
+
 def plot_3methods(X_mds, X_lle, X_dm, labels):
 
     results = [X_mds, X_lle, X_dm]
 
     # plot points2cluster for different k
-    fig1, (ax0, ax1, ax2) = plt.subplots(1, 3, figsize=(18, 6),
+    fig1, (ax0, ax1, ax2) = plt.subplots(1, 3, figsize=(12, 4),
                              subplot_kw={'xticks': [], 'yticks': []})
 
     fig1.subplots_adjust(hspace=0.3, wspace=0.05)
@@ -479,7 +335,7 @@ def plot_3methods_faces(data, X_mds, X_lle, X_dm, labels):
     results = [X_mds, X_lle, X_dm]
 
     # plot points2cluster for different k
-    fig1, (ax0, ax1, ax2) = plt.subplots(1, 3, figsize=(18, 6),
+    fig1, (ax0, ax1, ax2) = plt.subplots(1, 3, figsize=(12, 4),
                              subplot_kw={'xticks': [], 'yticks': []})
 
     fig1.subplots_adjust(hspace=0.3, wspace=0.05)
@@ -525,83 +381,76 @@ def noisy_mds(X, var):
 
     return fig
 
-# TODO: distance scatter plot
+
+def load_parameters(dataset):
+    '''
+    loads data and its parameters for tuning
+    :param dataset: name of dataset (str)
+    :return: X: NxD data matrix
+             labels: labels of data
+             D: pairwise distance matrix (euclidean square)
+             neighbors: list of max. 9 entries, k nearest neighbors for LLE tuning
+             sigma: list of max. 9 entries, sigma-values for Diffusion Map tuning
+             times: list of max. 9 entries, time-values for Diffusion Map tuning
+    '''
+    if dataset == 'swiss_roll':
+        X, labels = load_data(dataset , points=2000)
+        D = squared_euclid(X, X)
+        neighbors = [5, 10, 15, 20, 25, 30, 35, 50, 100]
+        sigma = [1.15, 1.3, 1.45, 1.6, 1.75, 1.9, 2.05, 2.2, 5]
+        times = [1, 2, 3, 4, 10, 15, 20, 25, 100]
+
+    elif dataset == 'mnist':
+        X, labels = load_data(dataset)
+        print(X.shape, labels.shape)
+        D = squared_euclid(X, X)
+        neighbors = [2, 5, 7, 9, 10, 11, 12, 15, 20]
+        sigma = [0.03, 0.04, 0.042, 0.044, 0.046, 0.048, 0.05, 0.06, 0.08]
+        times = [1, 2, 3, 4, 10, 15, 20, 25, 100]
+
+    elif dataset == 'faces':
+        X, labels = load_data(dataset)
+        D = squared_euclid(X, X)
+        neighbors = [2, 4, 10, 14, 15, 16, 17, 20, 30]
+        sigma = [3, 5, 7, 9, 11, 15, 20, 25, 50]
+        times = [1, 2, 3, 4, 10, 15, 20, 25, 100]
+
+    elif dataset == 'plane':
+        X, labels = load_data(dataset , points=2000)
+        D = squared_euclid(X, X)
+        neighbors = [2, 4, 10, 14, 15, 16, 17, 20, 30]
+        sigma = [3, 5, 7, 9, 11, 15, 20, 25, 50]
+        times = [1, 2, 3, 4, 10, 15, 20, 25, 100]
+
+    return X,labels, D, neighbors, sigma, times
+
 
 def main():
 
-    # swiss_roll
-    #
-    # dataset = 'swiss_roll'
-    # X, labels = load_data(dataset , points=2000)
-    # D = squared_euclid(X, X)
-    # neighbors = [5, 10, 15, 20, 25, 30, 35, 50, 100]
-    # sigma = [1.15, 1.3,
-    #          1.45, 1.6, 1.75,
-    #          1.9, 2.05, 2.2, 5]
-    # times = [1, 2, 3, 4, 10, 15, 20, 25, 100]
-    #
-    # # plane
-    # neighbors = [5, 10, 15, 20, 25, 30, 35, 50, 100]
-    # sigma = [1.15, 1.3,
-    #          1.45, 1.6, 1.75,
-    #          1.9, 2.05, 2.2, 5]
-    # times = [1, 2, 3, 4, 10, 15, 20, 25, 100]
-    #
-    #
-    # digets
-    # dataset = 'digits'
-    # X, labels = load_data(dataset , points=2000)
-    # print(X.shape, labels.shape)
-    # D = squared_euclid(X, X)
-    # 
-    # neighbors = [3, 6, 7, 8, 9, 10, 11, 12, 13]
-    # neighbors = [2, 3, 4, 5, 6, 7, 8, 9, 50]
-    # sigma = [3.0, 3.2, 3.4,
-    #          3.6, 3.8, 4.0,
-    #          4.2, 4.4, 20]
-    # times = [1, 2, 3, 4, 10, 15, 20, 25, 100]
-    #
-    #
-    # # faces
-    # dataset = 'faces'
-    # X, labels = load_data(dataset , points=2000)
-    # D = squared_euclid(X, X)
-    #
-    # neighbors = [2, 4, 10, 14, 15, 16, 17, 20, 30]
-    # sigma = [3, 5, 7, 9, 11, 15, 20, 25, 50]
-    # times = [1, 2, 3, 4, 10, 15, 20, 25, 100]
-    #
-    #
-    # plane
-    dataset = 'plane'
-    X, labels = load_data(dataset , points=1000)
-    D = squared_euclid(X, X)
-
-    neighbors = [2, 4, 10, 14, 15, 16, 17, 20, 30]
-    sigma = [3, 5, 7, 9, 11, 15, 20, 25, 50]
-    times = [1, 2, 3, 4, 10, 15, 20, 25, 100]
-    var   = [0.1, 0.5, 1, 2, 3, 4, 5, 20, 50]
-
-    fig_6 = noisy_mds(X, var)
-    fig_6.savefig(str(dataset) + '_screeplot.png')
+    dataset = 'faces'
+    X, labels, D, neighbors, sigma, times = load_parameters(dataset)
 
     # ----------------------------------------------------------------------------------
     fig_2 = tune_lle(X, D, labels, neighbors)
     fig_3 = tune_dm(X, D, labels, sigma)
-    #fig_4 = tune_dm_t(X, D, labels, 1.75, times)
+    fig_4 = tune_dm_t(X, D, labels, 0.044, times)
 
     fig_2.savefig(str(dataset) + '_LLETuning.png')
     fig_3.savefig(str(dataset) + '_DMTuning.png')
-    #fig_4.savefig(str(dataset) + '_DMTuning_t.png')
+    fig_4.savefig(str(dataset) + '_DMTuning_t.png')
 
     # ----------------------------------------------------------------------------------
-    X_lle = LLE(X, D, 2, 15) # k=15 for swiss_roll 2000 # 15 faces # 5 digits
-    X_dm = DiffusionMap(X, D, 2, 1.75, 1) # 1.75 swiss_roll # 7 faces # 4 digits
     X_mds = MDS(D, 2)
+    X_lle = LLE(X, D, 2, 15) # k=15 for swiss_roll 2000 # 15 faces # 10 mnist
+    X_dm = DiffusionMap(X, D, 2, 7, 1) # 1.75 swiss_roll # 7 faces # 0.044 mnist
 
-    #fig_5 = plot_3methods_faces(X, X_mds, X_lle, X_dm, labels)
-    fig_5 = plot_3methods(X_mds, X_lle, X_dm, labels)
+    # fig_5 = plot_3methods(X_mds, X_lle, X_dm, labels)
+    fig_5 = plot_3methods_faces(X, X_mds, X_lle, X_dm, labels)
     fig_5.savefig(str(dataset) + '_comparison.png')
+
+    var = [0.1, 0.5, 1, 2, 3, 4, 5, 10, 20]
+    # fig_6 = noisy_mds(X, var)
+    # fig_6.savefig(str(dataset) + '_screeplot.png')
 
     plt.show()
 
@@ -610,48 +459,3 @@ if __name__ == '__main__':
     main()
 
     pass
-#
-# #X, color = datasets.samples_generator.make_swiss_roll(n_samples=1000)  # TODO: delete
-# X = plane(500)
-# d = 2
-#
-#
-# Distance = squared_euclid(X, X)
-#
-# sigma = 12
-# t = 1
-#
-# K = np.exp(-(Distance)/(2*(sigma**2)))  # similarity Matrix
-# A = np.linalg.inv(np.diag(K.sum(axis=1))).dot(K)
-#
-# v, U = np.linalg.eigh(A)
-# v = v/v[v.argmax()]
-# U = U/U[:, v.argmax()]
-# biggest_v = (-v).argsort()[1:(d+1)]
-# U = U[:,biggest_v]
-#
-# ds = np.multiply(U, np.power(v[biggest_v], t))
-#
-# fig = plt.figure()
-# ax = fig.add_subplot(111)
-# ax.scatter(ds[:, 0], ds[:, 1]) #, c=color) #, X[:, 2], c=color, cmap=plt.cm.Spectral)
-# plt.show()
-#
-#
-#
-# X, color = swiss_roll_example()
-# # Values of epsilon in base 2 we want to scan.
-# sig =  np.power(2, np.arange(-10.,14.,1))
-# sig = np.linspace(0.1, 20)
-#
-# # Pre-allocate array containing sum(Aij).
-# Aij = np.zeros(sig.shape)
-#
-# from sklearn import metrics
-#
-# # Loop through values of epsilon and evaluate matrix sum.
-# for i in range(len(sig)):
-#     A = metrics.pairwise.rbf_kernel(X, gamma=1./(2.*sig[i]**2))
-#     Aij[i] = A.sum()
-#
-# plt.semilogy(range(len(sig)), Aij)
