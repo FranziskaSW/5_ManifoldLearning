@@ -277,6 +277,12 @@ def tune_dm_t(X, D, labels, sigma, times):
 #######################################################################################
 
 def plot_dataset(X, labels):
+    '''
+    creates 3d scatter plot of Data
+    :param X: Nx3 Data matrix
+    :param labels: labels of data
+    :return: 3d catter plot
+    '''
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -286,10 +292,16 @@ def plot_dataset(X, labels):
 
 
 def plot_3methods(X_mds, X_lle, X_dm, labels):
+    '''
+    creates 2d scatter plots of result of three methods
+    :param X_mds: Nx2 result matrix from MDS
+    :param X_lle: x2 result matrix from LLE
+    :param X_dm: x2 result matrix from Diffusion Map
+    :param labels: labels of data
+    :return: plot
+    '''
 
     results = [X_mds, X_lle, X_dm]
-
-    # plot points2cluster for different k
     fig1, (ax0, ax1, ax2) = plt.subplots(1, 3, figsize=(12, 4),
                              subplot_kw={'xticks': [], 'yticks': []})
 
@@ -306,7 +318,15 @@ def plot_3methods(X_mds, X_lle, X_dm, labels):
     return fig1
 
 
-def plot_with_images_s(X, labels, images, ax, image_num=30):
+def plot_with_images_s(X, images, ax, image_num=30):
+    '''
+    subplot for 3methods_faces - creates scatter plot of faces data with example images
+    :param X: Nx2 data matrix
+    :param images: original faces data
+    :param ax: subplot
+    :param image_num: how many images should be displayed in plot
+    :return: subplot
+    '''
 
     n, pixels = np.shape(images)
     img_size = int(pixels**0.5)
@@ -325,16 +345,22 @@ def plot_with_images_s(X, labels, images, ax, image_num=30):
                   extent=(x0, x1, y0, y1))
 
     # draw the scatter plot of the embedded data points:
-    ax.scatter(X[:, 0], X[:, 1], marker='.', alpha=0.7, c=labels, cmap=plt.cm.Spectral)
+    ax.scatter(X[:, 0], X[:, 1], marker='.', alpha=0.7, cmap=plt.cm.Spectral)
 
     return ax
 
 
 def plot_3methods_faces(data, X_mds, X_lle, X_dm, labels):
+    '''
+    creates 2d scatter plots of result of three methods with example images
+    :param X_mds: Nx2 result matrix from MDS
+    :param X_lle: x2 result matrix from LLE
+    :param X_dm: x2 result matrix from Diffusion Map
+    :param labels: labels of data
+    :return: plot
+    '''
 
     results = [X_mds, X_lle, X_dm]
-
-    # plot points2cluster for different k
     fig1, (ax0, ax1, ax2) = plt.subplots(1, 3, figsize=(12, 4),
                              subplot_kw={'xticks': [], 'yticks': []})
 
@@ -342,7 +368,7 @@ def plot_3methods_faces(data, X_mds, X_lle, X_dm, labels):
 
     for ax, k in zip([ax0, ax1, ax2], results):
         X_method = k
-        ax = plot_with_images_s(X_method, labels, data, ax)
+        ax = plot_with_images_s(X_method, data, ax, 30)
 
     ax0.set_title('MDS')
     ax1.set_title('LLE')
@@ -352,6 +378,13 @@ def plot_3methods_faces(data, X_mds, X_lle, X_dm, labels):
 
 
 def noisy_mds(X, var):
+    '''
+    creates scree plots of eigenvalues from MDS. The input dataset for MDS varies through
+    different random noise values which are characterized by its variance var.
+    :param X: NxD data set
+    :param var: list of max. 9 variance values for random noise
+    :return: scree plot
+    '''
 
     results = dict()
 
@@ -367,8 +400,6 @@ def noisy_mds(X, var):
         S = -1/2 * np.dot(np.dot(H, D), H)
         v, U = np.linalg.eigh(S)  # eigenvalues sorted from smallest to biggest
         v[::-1].sort()
-
-        v_10 = v[:10]
         results.update({variance: v[:3]})
 
     fig, axes = plt.subplots(nrows=3, ncols=3, figsize=(12,12))
@@ -393,6 +424,7 @@ def load_parameters(dataset):
              sigma: list of max. 9 entries, sigma-values for Diffusion Map tuning
              times: list of max. 9 entries, time-values for Diffusion Map tuning
     '''
+
     if dataset == 'swiss_roll':
         X, labels = load_data(dataset , points=2000)
         D = squared_euclid(X, X)
@@ -412,17 +444,14 @@ def load_parameters(dataset):
         X, labels = load_data(dataset)
         D = squared_euclid(X, X)
         neighbors = [2, 4, 10, 14, 15, 16, 17, 20, 30]
-        sigma = [3, 5, 7, 9, 11, 15, 20, 25, 50]
+        sigma = [3, 5, 6, 7, 9, 11, 15, 25, 50]
         times = [1, 2, 3, 4, 10, 15, 20, 25, 100]
 
-    elif dataset == 'plane':
-        X, labels = load_data(dataset , points=2000)
-        D = squared_euclid(X, X)
-        neighbors = [2, 4, 10, 14, 15, 16, 17, 20, 30]
-        sigma = [3, 5, 7, 9, 11, 15, 20, 25, 50]
-        times = [1, 2, 3, 4, 10, 15, 20, 25, 100]
+    else:
+        print('dataset unknown')
+        X, labels, D, neighbors, sigma, times = None, None, None, None, None
 
-    return X,labels, D, neighbors, sigma, times
+    return X, labels, D, neighbors, sigma, times
 
 
 def main():
@@ -430,6 +459,8 @@ def main():
     dataset = 'faces'
     X, labels, D, neighbors, sigma, times = load_parameters(dataset)
 
+    # ----------------------------------------------------------------------------------
+    # parameter tuning
     # ----------------------------------------------------------------------------------
     fig_2 = tune_lle(X, D, labels, neighbors)
     fig_3 = tune_dm(X, D, labels, sigma)
@@ -440,6 +471,8 @@ def main():
     fig_4.savefig(str(dataset) + '_DMTuning_t.png')
 
     # ----------------------------------------------------------------------------------
+    # plot comparison of tuned algorithms
+    # ----------------------------------------------------------------------------------
     X_mds = MDS(D, 2)
     X_lle = LLE(X, D, 2, 15) # k=15 for swiss_roll 2000 # 15 faces # 10 mnist
     X_dm = DiffusionMap(X, D, 2, 7, 1) # 1.75 swiss_roll # 7 faces # 0.044 mnist
@@ -448,9 +481,13 @@ def main():
     fig_5 = plot_3methods_faces(X, X_mds, X_lle, X_dm, labels)
     fig_5.savefig(str(dataset) + '_comparison.png')
 
+    # ----------------------------------------------------------------------------------
+    # scree plot for MDS algorithm with noisy plane in 3d
+    # ----------------------------------------------------------------------------------
+    X, labels = load_data('plane', 2000)
     var = [0.1, 0.5, 1, 2, 3, 4, 5, 10, 20]
-    # fig_6 = noisy_mds(X, var)
-    # fig_6.savefig(str(dataset) + '_screeplot.png')
+    fig_6 = noisy_mds(X, var)
+    fig_6.savefig('screeplot.png')
 
     plt.show()
 
