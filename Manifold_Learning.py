@@ -36,7 +36,7 @@ from keras.datasets import mnist
 #     # plot the data:
 #     fig = plt.figure()
 #     ax = fig.add_subplot(111, projection='3d')
-#     ax.scatter(X[:, 0], X[:, 1], X[:, 2], c=color, cmap=plt.cm.tab10)
+#     ax.scatter(X[:, 0], X[:, 1], X[:, 2], c=color, cmap=plt.cm.Spectral)
 #     plt.show()
 #
 #     return X, color
@@ -194,7 +194,7 @@ def MDS(D, d):
 
     # fig = plt.figure()
     # ax = fig.add_subplot(111, projection='3d')
-    # ax.scatter(ds[:, 0], ds[:, 1])# , c=color) #, X[:, 2], c=color, cmap=plt.cm.tab10)
+    # ax.scatter(ds[:, 0], ds[:, 1])# , c=color) #, X[:, 2], c=color, cmap=plt.cm.Spectral)
     # plt.show()
 
     return np.array(ds)
@@ -258,7 +258,7 @@ def LLE(X, D, d, k):
     # ds = U
     # fig = plt.figure()
     # ax = fig.add_subplot(111)
-    # ax.scatter(ds[:, 0], ds[:, 1])# , c=color) #, X[:, 2], c=color, cmap=plt.cm.tab10)
+    # ax.scatter(ds[:, 0], ds[:, 1])# , c=color) #, X[:, 2], c=color, cmap=plt.cm.Spectral)
     # plt.show()
 
     return np.array(U)
@@ -319,7 +319,7 @@ def tune_lle(X, D, labels, neighbors):
     for ax, k in zip(axes.flat, sorted(results)):
         print(k)
         X = results[k]
-        ax.scatter(X[:, 0], X[:, 1],  marker='.', alpha=0.7, c=labels, cmap=plt.cm.tab10)
+        ax.scatter(X[:, 0], X[:, 1],  marker='.', alpha=0.7, c=labels, cmap=plt.cm.Spectral)
         ax.set_title('k = ' + str(k))
 
     return fig
@@ -355,7 +355,7 @@ def tune_lle(X, D, labels, neighbors):
 #         for ax, k in zip(axes.flat, sorted(results)):
 #             print('plot times:' + str(k))
 #             X = results[k]
-#             ax.scatter(X[:, 0], X[:, 1], c=labels, cmap=plt.cm.tab10)
+#             ax.scatter(X[:, 0], X[:, 1], c=labels, cmap=plt.cm.Spectral)
 #             ax.set_title('t = ' + str(k))
 #
 #
@@ -387,7 +387,7 @@ def tune_dm(X, D, labels, sigma):
     for ax, k in zip(axes.flat, sorted(results)):
         print('sigma:' + str(k))
         X = results[k]
-        ax.scatter(X[:, 0], X[:, 1],  marker='.', alpha=0.7, c=labels, cmap=plt.cm.tab10)
+        ax.scatter(X[:, 0], X[:, 1],  marker='.', alpha=0.7, c=labels, cmap=plt.cm.Spectral)
         ax.set_title('sigma = ' + str(k))
 
     return fig
@@ -419,7 +419,7 @@ def tune_dm_t(X, D, labels, sigma, times):
     for ax, k in zip(axes.flat, sorted(results)):
         print('time:' + str(k))
         X = results[k]
-        ax.scatter(X[:, 0], X[:, 1], c=labels, cmap=plt.cm.tab10)
+        ax.scatter(X[:, 0], X[:, 1], c=labels, cmap=plt.cm.Spectral)
         ax.set_title('t = ' + str(k))
 
     return fig
@@ -441,7 +441,7 @@ def plot_3methods(X_mds, X_lle, X_dm, labels):
 
     for ax, k in zip([ax0, ax1, ax2], results):
         X_method = k
-        ax.scatter(X_method[:, 0], X_method[:, 1],  marker='.', alpha=0.7, c=labels, cmap=plt.cm.tab10)
+        ax.scatter(X_method[:, 0], X_method[:, 1],  marker='.', alpha=0.7, c=labels, cmap=plt.cm.Spectral)
 
     ax0.set_title('MDS')
     ax1.set_title('LLE')
@@ -469,7 +469,7 @@ def plot_with_images_s(X, labels, images, ax, image_num=30):
                   extent=(x0, x1, y0, y1))
 
     # draw the scatter plot of the embedded data points:
-    ax.scatter(X[:, 0], X[:, 1], marker='.', alpha=0.7, c=labels, cmap=plt.cm.tab10)
+    ax.scatter(X[:, 0], X[:, 1], marker='.', alpha=0.7, c=labels, cmap=plt.cm.Spectral)
 
     return ax
 
@@ -513,14 +513,14 @@ def noisy_mds(X, var):
         v[::-1].sort()
 
         v_10 = v[:10]
-        results.update({variance: v[:10]})
+        results.update({variance: v[:3]})
 
     fig, axes = plt.subplots(nrows=3, ncols=3, figsize=(12,12))
 
     for ax, k in zip(axes.flat, sorted(results)):
         print(k)
         vals = results[k]
-        ax.bar(range(0, 10), vals, color=np.array(['b', 'b', 'r']))
+        ax.bar(range(0, 3), vals, color=np.array(['b', 'b', 'r']))
         ax.set_title('$\sigma_{noise}$ = ' + str(k))
 
     return fig
@@ -529,10 +529,11 @@ def noisy_mds(X, var):
 
 def main():
 
-    dataset = 'faces'
-
-
-    # # swiss_roll
+    # swiss_roll
+    #
+    # dataset = 'swiss_roll'
+    # X, labels = load_data(dataset , points=2000)
+    # D = squared_euclid(X, X)
     # neighbors = [5, 10, 15, 20, 25, 30, 35, 50, 100]
     # sigma = [1.15, 1.3,
     #          1.45, 1.6, 1.75,
@@ -546,24 +547,20 @@ def main():
     #          1.9, 2.05, 2.2, 5]
     # times = [1, 2, 3, 4, 10, 15, 20, 25, 100]
     #
-    # var = [0.1, 0.5, 1, 2, 3, 4, 5, 10, 50]
-    # fig_6 = noisy_mds(X, var)
-    #
-    # fig_6.savefig(str(dataset) + '_screeplot.png')
-    #
     #
     # digets
-    dataset = 'digits'
-    X, labels = load_data(dataset , points=2000)
-    print(X.shape, labels.shape)
-    D = squared_euclid(X, X)
-
-    neighbors = [3, 6, 7, 8, 9, 10, 11, 12, 13]
-    neighbors = [2, 3, 4, 5, 6, 7, 8, 9, 10]
-    sigma = [3.0, 3.2, 3.4,
-             3.6, 3.8, 4.0,
-             4.2, 4.4, 4.6]
-    times = [1, 2, 3, 4, 10, 15, 20, 25, 100]
+    # dataset = 'digits'
+    # X, labels = load_data(dataset , points=2000)
+    # print(X.shape, labels.shape)
+    # D = squared_euclid(X, X)
+    # 
+    # neighbors = [3, 6, 7, 8, 9, 10, 11, 12, 13]
+    # neighbors = [2, 3, 4, 5, 6, 7, 8, 9, 50]
+    # sigma = [3.0, 3.2, 3.4,
+    #          3.6, 3.8, 4.0,
+    #          4.2, 4.4, 20]
+    # times = [1, 2, 3, 4, 10, 15, 20, 25, 100]
+    #
     #
     # # faces
     # dataset = 'faces'
@@ -574,18 +571,32 @@ def main():
     # sigma = [3, 5, 7, 9, 11, 15, 20, 25, 50]
     # times = [1, 2, 3, 4, 10, 15, 20, 25, 100]
     #
+    #
+    # plane
+    dataset = 'plane'
+    X, labels = load_data(dataset , points=1000)
+    D = squared_euclid(X, X)
+
+    neighbors = [2, 4, 10, 14, 15, 16, 17, 20, 30]
+    sigma = [3, 5, 7, 9, 11, 15, 20, 25, 50]
+    times = [1, 2, 3, 4, 10, 15, 20, 25, 100]
+    var   = [0.1, 0.5, 1, 2, 3, 4, 5, 20, 50]
+
+    fig_6 = noisy_mds(X, var)
+    fig_6.savefig(str(dataset) + '_screeplot.png')
+
     # ----------------------------------------------------------------------------------
-    # fig_2 = tune_lle(X, D, labels, neighbors)
+    fig_2 = tune_lle(X, D, labels, neighbors)
     fig_3 = tune_dm(X, D, labels, sigma)
     #fig_4 = tune_dm_t(X, D, labels, 1.75, times)
 
-    # fig_2.savefig(str(dataset) + '_LLETuning.png')
+    fig_2.savefig(str(dataset) + '_LLETuning.png')
     fig_3.savefig(str(dataset) + '_DMTuning.png')
     #fig_4.savefig(str(dataset) + '_DMTuning_t.png')
 
     # ----------------------------------------------------------------------------------
-    X_lle = LLE(X, D, 2, 5) # k=15 for swiss_roll 2000 # 15 faces # 5 digits
-    X_dm = DiffusionMap(X, D, 2, 4, 1) # 1.75 swiss_roll # 7 faces # 4 digits
+    X_lle = LLE(X, D, 2, 15) # k=15 for swiss_roll 2000 # 15 faces # 5 digits
+    X_dm = DiffusionMap(X, D, 2, 1.75, 1) # 1.75 swiss_roll # 7 faces # 4 digits
     X_mds = MDS(D, 2)
 
     #fig_5 = plot_3methods_faces(X, X_mds, X_lle, X_dm, labels)
@@ -623,7 +634,7 @@ if __name__ == '__main__':
 #
 # fig = plt.figure()
 # ax = fig.add_subplot(111)
-# ax.scatter(ds[:, 0], ds[:, 1]) #, c=color) #, X[:, 2], c=color, cmap=plt.cm.tab10)
+# ax.scatter(ds[:, 0], ds[:, 1]) #, c=color) #, X[:, 2], c=color, cmap=plt.cm.Spectral)
 # plt.show()
 #
 #
